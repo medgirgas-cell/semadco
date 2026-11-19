@@ -324,6 +324,28 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
 
 .att-link-row{display:none;gap:6px;margin-bottom:8px;flex-wrap:wrap}
 .att-link-row .form-input{flex:1;min-width:160px}
+
+.trk-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.trk-tab{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--border2);border-radius:20px;background:var(--bg3);color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit}
+.trk-tab b{background:rgba(128,128,128,.22);border-radius:10px;padding:0 7px;font-size:11px;color:var(--text)}
+.trk-tab:hover{border-color:var(--blue)}
+.trk-tab.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.trk-tab.on b{background:rgba(255,255,255,.25);color:#fff}
+.trk-tab.red b{background:rgba(239,68,68,.2);color:var(--red)}
+.trk-tab.on.red b{color:#fff}
+.trk-hint{font-size:11px;color:var(--text3);margin:-4px 0 12px}
+.fu-item{border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:8px;background:var(--bg3);font-size:12.5px}
+.fu-item .fu-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+.fu-item .fu-d{font-weight:700}
+.fu-item .fu-m{font-size:11px;color:var(--text3)}
+.fu-item .fu-del{margin-inline-start:auto;background:none;border:0;color:var(--red);cursor:pointer;font-size:14px}
+.fu-item .fu-next{font-size:11.5px;color:var(--yellow);margin-top:4px}
+.fu-form{border-top:1px dashed var(--border2);padding-top:12px;margin-top:6px}
+.fu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fu-grid .full{grid-column:1/-1}
+.fu-quick{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.fu-info{background:rgba(var(--blue-rgb),.08);border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:12.5px;line-height:1.8}
+@media(max-width:560px){.fu-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -529,7 +551,7 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
             <div class="card"><div class="card-header"><div class="card-title"><i class="ti ti-chart-bar"></i> الطلبات حسب الإدارة</div></div><div style="position:relative;height:200px;"><canvas id="barChart"></canvas></div></div>
           </div>
           <div class="tables-row">
-            <div class="card"><div class="card-header"><div class="card-title"><i class="ti ti-alert-circle" style="color:var(--red);"></i> الطلبات المتأخرة</div><span class="card-action" onclick="showPage('all-requests')">عرض الكل</span></div><div class="tbl-wrap"><table class="tbl" id="delayedTbl"></table></div></div>
+            <div class="card"><div class="card-header"><div class="card-title"><i class="ti ti-alert-circle" style="color:var(--red);"></i> الطلبات المتأخرة</div><span class="card-action" onclick="showPage('all-requests');setTrkTab('متأخر')">عرض الكل ومتابعتها</span></div><div class="tbl-wrap"><table class="tbl" id="delayedTbl"></table></div></div>
             <div class="card"><div class="card-header"><div class="card-title"><i class="ti ti-inbox"></i> آخر الطلبات الواردة</div><span class="card-action" onclick="showPage('all-requests')">عرض الكل</span></div><div class="tbl-wrap"><table class="tbl" id="recentTbl"></table></div></div>
           </div>
         </div>
@@ -624,9 +646,11 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
           <button class="btn btn-danger btn-sm" onclick="bulkDelete()"><i class="ti ti-trash"></i> حذف المحددة</button>
           <button class="btn btn-secondary btn-sm" onclick="toggleBulkMode()">إلغاء</button>
         </div>
+        <div class="trk-tabs" id="trkTabs"></div>
+        <div class="trk-hint" id="trkHint"></div>
         <div class="search-bar">
           <div class="search-input-wrap"><i class="ti ti-search"></i><input class="form-input search-input" id="searchQ" placeholder="بحث في الطلبات..." oninput="debounceSearch()"></div>
-          <select class="form-select filter-select" id="filterStatus" onchange="renderAllTable()"><option value="">كل الحالات</option><option>تم الرد</option><option>جاري التنفيذ</option><option>متأخر</option><option>لم يتم الرد</option></select>
+          <select class="form-select filter-select" id="filterStatus" onchange="renderAllTable()"><option value="">كل الحالات</option><option value="__pending">لم يتم الرد (داخل المدة + متأخر)</option><option value="__inwindow">داخل مدة التنفيذ</option><option value="__follow">تحتاج متابعة</option><option>تم الرد</option><option>جاري التنفيذ</option><option>متأخر</option><option>لم يتم الرد</option></select>
           <select class="form-select filter-select" id="filterDept" onchange="renderAllTable()"><option value="">كل الإدارات</option></select>
           <select class="form-select filter-select" id="filterPriority" onchange="renderAllTable()"><option value="">كل الأولويات</option><option>عادي</option><option>مستعجل</option><option>عاجل جداً</option></select>
         </div>
@@ -651,6 +675,8 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">
           <div class="report-card" onclick="exportReport('all')"><div class="report-ico" style="background:rgba(var(--blue-rgb),0.15);color:var(--blue-light);"><i class="ti ti-file-spreadsheet"></i></div><div><div style="font-weight:600;margin-bottom:4px;">تقرير كامل</div><div style="font-size:11px;color:var(--text3);">جميع الطلبات وتفاصيلها</div></div></div>
           <div class="report-card" onclick="exportReport('delayed')"><div class="report-ico" style="background:rgba(239,68,68,0.15);color:var(--red);"><i class="ti ti-alert-triangle"></i></div><div><div style="font-weight:600;margin-bottom:4px;">تقرير المتأخرات</div><div style="font-size:11px;color:var(--text3);">الطلبات التي تأخر ردها</div></div></div>
+          <div class="report-card" onclick="exportReport('unreplied')"><div class="report-ico" style="background:rgba(245,158,11,0.15);color:var(--yellow);"><i class="ti ti-mail-off"></i></div><div><div style="font-weight:600;margin-bottom:4px;">لم يتم الرد (الكل)</div><div style="font-size:11px;color:var(--text3);">داخل مدة التنفيذ + المتأخر، مع بيانات المتابعة</div></div></div>
+          <div class="report-card" onclick="exportReport('followlog')"><div class="report-ico" style="background:rgba(var(--blue-rgb),0.15);color:var(--blue-light);"><i class="ti ti-phone-call"></i></div><div><div style="font-weight:600;margin-bottom:4px;">سجل المتابعات</div><div style="font-size:11px;color:var(--text3);">كل المتابعات المسجلة على الطلبات</div></div></div>
           <div class="report-card" onclick="exportReport('pending')"><div class="report-ico" style="background:rgba(245,158,11,0.15);color:var(--yellow);"><i class="ti ti-clock"></i></div><div><div style="font-weight:600;margin-bottom:4px;">تقرير الطلبات المعلقة</div><div style="font-size:11px;color:var(--text3);">جاري التنفيذ ولم يتم الرد</div></div></div>
           <div class="report-card" onclick="exportReport('replied')"><div class="report-ico" style="background:rgba(34,197,94,0.15);color:var(--green);"><i class="ti ti-circle-check"></i></div><div><div style="font-weight:600;margin-bottom:4px;">تقرير الطلبات المنجزة</div><div style="font-size:11px;color:var(--text3);">الطلبات التي تم الرد عليها</div></div></div>
           <div class="report-card" onclick="printTable()"><div class="report-ico" style="background:rgba(71,85,105,0.3);color:var(--text2);"><i class="ti ti-printer"></i></div><div><div style="font-weight:600;margin-bottom:4px;">طباعة التقرير</div><div style="font-size:11px;color:var(--text3);">طباعة قائمة الطلبات</div></div></div>
@@ -760,9 +786,38 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
     <div class="modal-body" id="detailBody"></div>
     <div class="modal-footer">
       <button class="btn btn-primary btn-sm" id="detailEditBtn"><i class="ti ti-edit"></i> تعديل</button>
+      <button class="btn btn-warning btn-sm" id="detailFollowBtn" onclick="closeModal('detailModal');openFollow(currentDetailId)"><i class="ti ti-phone-call"></i> تسجيل متابعة</button>
       <button class="btn btn-success btn-sm" id="detailReplyBtn" onclick="goReplyFromDetail()"><i class="ti ti-message-reply"></i> تسجيل رد</button>
       <button class="btn btn-danger btn-sm" id="detailDeleteBtn"><i class="ti ti-trash"></i> حذف</button>
       <button class="btn btn-secondary btn-sm" onclick="closeModal('detailModal')">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="followModal" role="dialog" aria-modal="true" aria-labelledby="followTitle" onkeydown="handleModalKey(event,'followModal')">
+  <div class="modal" style="width:580px;max-width:96vw;">
+    <div class="modal-header"><div class="modal-title" id="followTitle">متابعة الطلب</div><div class="modal-close" role="button" tabindex="0" aria-label="إغلاق" onclick="closeModal('followModal')" onkeydown="if(event.key==='Enter'||event.key===' ')closeModal('followModal')"><i class="ti ti-x"></i></div></div>
+    <div class="modal-body">
+      <div class="fu-info" id="followInfo"></div>
+      <div style="font-weight:700;font-size:13px;margin-bottom:8px;"><i class="ti ti-history"></i> سجل المتابعات <span id="followCount" style="color:var(--text3);font-weight:400;"></span></div>
+      <div id="followList"></div>
+      <div class="fu-form" id="followForm">
+        <div style="font-weight:700;font-size:13px;margin-bottom:10px;"><i class="ti ti-phone-call"></i> تسجيل متابعة جديدة</div>
+        <div class="fu-grid">
+          <div class="form-group"><label class="form-label">تاريخ المتابعة <span class="req">*</span></label><input type="date" class="form-input" id="fu-date"></div>
+          <div class="form-group"><label class="form-label">وسيلة المتابعة</label><select class="form-select" id="fu-method"><option>اتصال هاتفي</option><option>مراسلة رسمية</option><option>بريد إلكتروني</option><option>واتساب</option><option>زيارة / مقابلة</option><option>أخرى</option></select></div>
+          <div class="form-group"><label class="form-label">الجهة / الشخص الذي تم التواصل معه</label><input class="form-input" id="fu-contact" placeholder="اسم المسؤول أو الإدارة"></div>
+          <div class="form-group"><label class="form-label">نتيجة المتابعة</label><select class="form-select" id="fu-result"><option value="">-- اختر --</option><option>وعدوا بالرد</option><option>طلبوا مهلة إضافية</option><option>لا يوجد رد / لم يتم الوصول</option><option>الرد قيد الاعتماد</option><option>تم الرد (سيُسجَّل رسمياً)</option><option>أخرى</option></select></div>
+          <div class="form-group full"><label class="form-label">ملاحظات المتابعة</label><textarea class="form-textarea" id="fu-note" placeholder="ما تم في هذه المتابعة..."></textarea></div>
+          <div class="form-group full"><label class="form-label">موعد المتابعة القادمة (اختياري)</label><input type="date" class="form-input" id="fu-next">
+            <div class="fu-quick"><button type="button" class="btn btn-secondary btn-sm" onclick="fuQuick(1)">غداً</button><button type="button" class="btn btn-secondary btn-sm" onclick="fuQuick(3)">بعد 3 أيام</button><button type="button" class="btn btn-secondary btn-sm" onclick="fuQuick(7)">بعد أسبوع</button><button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('fu-next').value=''">بدون موعد</button></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary btn-sm" onclick="saveFollow()"><i class="ti ti-device-floppy"></i> حفظ المتابعة</button>
+      <button class="btn btn-success btn-sm" id="followReplyBtn" onclick="followToReply()"><i class="ti ti-message-reply"></i> تسجيل رد</button>
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('followModal')">إغلاق</button>
     </div>
   </div>
 </div>
@@ -1088,11 +1143,12 @@ function openDetail(id){
     <div class="detail-row" style="background:rgba(var(--blue-rgb),0.07);"><span class="detail-key"><i class="ti ti-lock" style="font-size:12px;"></i> المسجِّل (مثبّت)</span><span class="detail-val">${esc(req.createdBy||'—')}${req.createdByRole?' — '+esc(req.createdByRole):''}${req.createdAt?'<br><span style="font-size:11px;color:var(--text3);">'+esc(new Date(req.createdAt).toLocaleString('ar-EG'))+'</span>':''}</span></div>
     ${req.replyBy?`<div class="detail-row"><span class="detail-key">سجّل الرد</span><span class="detail-val">${esc(req.replyBy)}${req.replyAt?'<br><span style="font-size:11px;color:var(--text3);">'+esc(new Date(req.replyAt).toLocaleString('ar-EG'))+'</span>':''}</span></div>`:''}
     ${(req.attachments&&req.attachments.length)?`<div class="detail-row"><span class="detail-key"><i class="ti ti-paperclip" style="font-size:12px;"></i> المرفقات</span><span class="detail-val"><div class="att-grid">${req.attachments.map((a,i)=>`<div class="att-item" title="${esc(a.type==='link'?(a.url||a.name):a.name)}" onclick="attViewById(${req.id},${i})">${attThumb(a)}</div>`).join('')}</div></span></div>`:''}
+    ${fuDetailBlock(req,status)}
     ${req.editedBy?`<div class="detail-row"><span class="detail-key">عُدِّل بواسطة</span><span class="detail-val">${esc(req.editedBy)}</span></div>`:''}
   `;
   document.getElementById('detailDeleteBtn').onclick=()=>{deleteRequest(id);closeModal('detailModal');};
   document.getElementById('detailEditBtn').onclick=()=>{openEditModal(id);closeModal('detailModal');};
-  document.getElementById('detailReplyBtn').style.display=(status==='تم الرد'||!can('reply'))?'none':'inline-flex';document.getElementById('detailEditBtn').style.display=can('edit')?'inline-flex':'none';document.getElementById('detailDeleteBtn').style.display=can('delete')?'inline-flex':'none';
+  document.getElementById('detailReplyBtn').style.display=(status==='تم الرد'||!can('reply'))?'none':'inline-flex';document.getElementById('detailFollowBtn').style.display=(status==='تم الرد'||!(can('reply')||can('edit')))?'none':'inline-flex';document.getElementById('detailEditBtn').style.display=can('edit')?'inline-flex':'none';document.getElementById('detailDeleteBtn').style.display=can('delete')?'inline-flex':'none';
   openModal('detailModal');
 }
 function goReplyFromDetail(){currentReplyId=currentDetailId;closeModal('detailModal');showPage('register-reply');}
@@ -1316,12 +1372,14 @@ function renderAllTable(){
   const d=getData();let reqs=d.requests.map(r=>({...r,computedStatus:calcStatus(r)}));
   const q=document.getElementById('searchQ').value.toLowerCase(),st=document.getElementById('filterStatus').value,dept=document.getElementById('filterDept').value,pri=document.getElementById('filterPriority').value;
   if(q)reqs=reqs.filter(r=>r.num.toLowerCase().includes(q)||r.subject.toLowerCase().includes(q)||(r.dept||''). includes(q)||(r.handler||''). toLowerCase().includes(q)||(r.createdBy||'').toLowerCase().includes(q));
-  if(st)reqs=reqs.filter(r=>r.computedStatus===st);if(dept)reqs=reqs.filter(r=>reqDepts(r).includes(dept));if(pri)reqs=reqs.filter(r=>(r.priority||'عادي')===pri);
+  renderTrkTabs(d.requests.map(r=>({...r,computedStatus:calcStatus(r)})),st);
+  if(st==='__pending')reqs=reqs.filter(r=>r.computedStatus!=='تم الرد');else if(st==='__inwindow')reqs=reqs.filter(r=>r.computedStatus!=='تم الرد'&&r.computedStatus!=='متأخر');else if(st==='__follow')reqs=reqs.filter(needsFollow);else if(st)reqs=reqs.filter(r=>r.computedStatus===st);
+  if(st==='__pending'||st==='__follow'||st==='متأخر'||st==='__inwindow')reqs.sort((a,b)=>new Date(a.date)-new Date(b.date));if(dept)reqs=reqs.filter(r=>reqDepts(r).includes(dept));if(pri)reqs=reqs.filter(r=>(r.priority||'عادي')===pri);
   const total=reqs.length,totalPages=Math.max(1,Math.ceil(total/PAGE_SIZE));
   if(currentPage_allReq>totalPages)currentPage_allReq=totalPages;
   const start=(currentPage_allReq-1)*PAGE_SIZE,pageReqs=reqs.slice(start,start+PAGE_SIZE);
   const bc2=bulkMode?'<th style="width:36px;"></th>':'';
-  document.getElementById('allReqTbl').innerHTML=`<thead><tr>${bc2}<th>رقم الطلب</th><th>الموضوع</th><th>الإدارة</th><th>تاريخ الورود</th><th>الأولوية</th><th>الحالة</th><th>المسؤول</th><th>المسجِّل</th><th>إجراء</th></tr></thead><tbody>${pageReqs.length?pageReqs.map(r=>`<tr>${bulkMode?`<td><input type="checkbox" class="bulk-cb" data-id="${r.id}" aria-label="تحديد الطلب ${esc(r.num)}" onchange="updateBulkCount()" style="cursor:pointer;"></td>`:''}<td style="color:var(--blue-light);cursor:pointer;" onclick="openDetail(${r.id})">${esc(r.num)}${(r.attachments&&r.attachments.length)?` <i class="ti ti-paperclip" title="${r.attachments.length} مرفق" style="font-size:12px;color:var(--text3);"></i>`:''}</td><td style="cursor:pointer;" onclick="openDetail(${r.id})">${esc(r.subject.substring(0,35))}${r.subject.length>35?'...':''}</td><td>${esc(deptText(r,true))}</td><td>${esc(r.date)}</td><td>${getPriorityBadge(r.priority)}</td><td>${getBadge(r.computedStatus)}</td><td style="font-size:11px;color:var(--text3);">${esc(r.handler||'—')}</td><td style="font-size:11px;color:var(--blue-light);" title="${r.createdAt?esc(new Date(r.createdAt).toLocaleString('ar-EG')):''}">${esc(r.createdBy||'—')}</td><td><div style="display:flex;gap:4px;"><button class="btn btn-secondary btn-sm" style="padding:3px 8px;" aria-label="عرض تفاصيل الطلب ${esc(r.num)}" onclick="openDetail(${r.id})"><i class="ti ti-eye" style="font-size:13px;" aria-hidden="true"></i></button>${can('edit')?`<button class="btn btn-secondary btn-sm" style="padding:3px 8px;" aria-label="تعديل الطلب ${esc(r.num)}" onclick="openEditModal(${r.id})"><i class="ti ti-edit" style="font-size:13px;" aria-hidden="true"></i></button>`:''}${r.computedStatus!=='تم الرد'&&can('reply')?`<button class="btn btn-success btn-sm" style="padding:3px 8px;" aria-label="تسجيل رد على الطلب ${esc(r.num)}" onclick="currentReplyId=${r.id};showPage('register-reply')"><i class="ti ti-message-reply" style="font-size:13px;" aria-hidden="true"></i></button>`:''}${can('delete')?`<button class="btn btn-danger btn-sm" style="padding:3px 8px;" aria-label="حذف الطلب ${esc(r.num)}" onclick="deleteRequest(${r.id})"><i class="ti ti-trash" style="font-size:13px;" aria-hidden="true"></i></button>`:''}</div></td></tr>`).join(''):`<tr><td colspan="${bulkMode?10:9}" style="text-align:center;padding:30px;color:var(--text3);">لا توجد طلبات</td></tr>`}</tbody>`;
+  document.getElementById('allReqTbl').innerHTML=`<thead><tr>${bc2}<th>رقم الطلب</th><th>الموضوع</th><th>الإدارة</th><th>تاريخ الورود</th><th>الأولوية</th><th>الحالة</th><th>المتابعات</th><th>المسؤول</th><th>المسجِّل</th><th>إجراء</th></tr></thead><tbody>${pageReqs.length?pageReqs.map(r=>`<tr>${bulkMode?`<td><input type="checkbox" class="bulk-cb" data-id="${r.id}" aria-label="تحديد الطلب ${esc(r.num)}" onchange="updateBulkCount()" style="cursor:pointer;"></td>`:''}<td style="color:var(--blue-light);cursor:pointer;" onclick="openDetail(${r.id})">${esc(r.num)}${(r.attachments&&r.attachments.length)?` <i class="ti ti-paperclip" title="${r.attachments.length} مرفق" style="font-size:12px;color:var(--text3);"></i>`:''}</td><td style="cursor:pointer;" onclick="openDetail(${r.id})">${esc(r.subject.substring(0,35))}${r.subject.length>35?'...':''}</td><td>${esc(deptText(r,true))}</td><td>${esc(r.date)}</td><td>${getPriorityBadge(r.priority)}</td><td>${getBadge(r.computedStatus)}${r.computedStatus==='متأخر'?` <span style="font-size:10.5px;color:var(--red);white-space:nowrap;">+${lateDays(r)} يوم</span>`:''}</td><td>${fuCell(r)}</td><td style="font-size:11px;color:var(--text3);">${esc(r.handler||'—')}</td><td style="font-size:11px;color:var(--blue-light);" title="${r.createdAt?esc(new Date(r.createdAt).toLocaleString('ar-EG')):''}">${esc(r.createdBy||'—')}</td><td><div style="display:flex;gap:4px;"><button class="btn btn-secondary btn-sm" style="padding:3px 8px;" aria-label="عرض تفاصيل الطلب ${esc(r.num)}" onclick="openDetail(${r.id})"><i class="ti ti-eye" style="font-size:13px;" aria-hidden="true"></i></button>${can('edit')?`<button class="btn btn-secondary btn-sm" style="padding:3px 8px;" aria-label="تعديل الطلب ${esc(r.num)}" onclick="openEditModal(${r.id})"><i class="ti ti-edit" style="font-size:13px;" aria-hidden="true"></i></button>`:''}${r.computedStatus!=='تم الرد'&&can('reply')?`<button class="btn btn-success btn-sm" style="padding:3px 8px;" aria-label="تسجيل رد على الطلب ${esc(r.num)}" onclick="currentReplyId=${r.id};showPage('register-reply')"><i class="ti ti-message-reply" style="font-size:13px;" aria-hidden="true"></i></button>`:''}${r.computedStatus!=='تم الرد'&&(can('reply')||can('edit'))?`<button class="btn btn-warning btn-sm" style="padding:3px 8px;" title="تسجيل متابعة" aria-label="تسجيل متابعة للطلب ${esc(r.num)}" onclick="openFollow(${r.id})"><i class="ti ti-phone-call" style="font-size:13px;" aria-hidden="true"></i></button>`:''}${can('delete')?`<button class="btn btn-danger btn-sm" style="padding:3px 8px;" aria-label="حذف الطلب ${esc(r.num)}" onclick="deleteRequest(${r.id})"><i class="ti ti-trash" style="font-size:13px;" aria-hidden="true"></i></button>`:''}</div></td></tr>`).join(''):`<tr><td colspan="${bulkMode?11:10}" style="text-align:center;padding:30px;color:var(--text3);">لا توجد طلبات</td></tr>`}</tbody>`;
   renderPagination(total,totalPages);
 }
 function renderPagination(total,totalPages){
@@ -1332,6 +1390,102 @@ function renderPagination(total,totalPages){
   pg.innerHTML=h;
 }
 function goPage(n){const d=getData(),tp=Math.max(1,Math.ceil(d.requests.length/PAGE_SIZE));if(n<1||n>tp)return;currentPage_allReq=n;renderAllTable();}
+
+
+// ── متابعة الطلبات غير المردود عليها (داخل المدة / المتأخرة) ──
+function fuToday(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fuAddDays(n){const d=new Date();d.setDate(d.getDate()+n);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fuDiff(a,b){return Math.floor((new Date(b).getTime()-new Date(a).getTime())/86400000);}
+function reqFollowups(r){return Array.isArray(r.followups)?r.followups:[];}
+function lastFollow(r){const f=reqFollowups(r);if(!f.length)return null;return f.slice().sort((a,b)=>(a.date<b.date?1:a.date>b.date?-1:(b.id||0)-(a.id||0)))[0];}
+function lateDays(r){const lim=(getSettings().days||7),since=Math.floor((Date.now()-new Date(r.date).getTime())/86400000);return Math.max(0,since-lim);}
+function needsFollow(r){
+  const cs=r.computedStatus||calcStatus(r);if(cs==='تم الرد')return false;
+  const l=lastFollow(r),t=fuToday();
+  if(l&&l.nextDate)return l.nextDate<=t;
+  if(cs!=='متأخر')return false;
+  return !l||fuDiff(l.date,t)>=3;
+}
+function fuCell(r){
+  const f=reqFollowups(r),l=lastFollow(r),due=needsFollow(r);
+  if(!f.length)return due?'<span style="font-size:11px;color:var(--red);">⏰ تحتاج متابعة</span>':'<span style="color:var(--text3);">—</span>';
+  return `<div style="font-size:11px;line-height:1.6;white-space:nowrap;"><b>${f.length}</b> متابعة<br><span style="color:var(--text3);">آخر: ${esc(l.date)}</span>${l.nextDate?`<br><span style="color:${due?'var(--red)':'var(--yellow)'};">القادمة: ${esc(l.nextDate)}${due?' ⏰':''}</span>`:(due?'<br><span style="color:var(--red);">⏰ تحتاج متابعة</span>':'')}</div>`;
+}
+function renderTrkTabs(all,st){
+  const box=document.getElementById('trkTabs');if(!box)return;
+  const un=all.filter(r=>r.computedStatus!=='تم الرد'),
+   cnt={'':all.length,'__pending':un.length,'__inwindow':un.filter(r=>r.computedStatus!=='متأخر').length,'متأخر':un.filter(r=>r.computedStatus==='متأخر').length,'__follow':all.filter(needsFollow).length,'تم الرد':all.length-un.length};
+  const tabs=[['','الكل',''],['__pending','لم يتم الرد',''],['__inwindow','داخل مدة التنفيذ',''],['متأخر','متأخر','red'],['__follow','تحتاج متابعة','red'],['تم الرد','تم الرد','']];
+  box.innerHTML=tabs.map(([v,l,c])=>`<button type="button" class="trk-tab ${c} ${st===v?'on':''}" onclick="setTrkTab('${v}')">${l} <b>${cnt[v]}</b></button>`).join('');
+  const hint={'__pending':'كل الطلبات التي لم يُرد عليها بعد، سواء داخل مدة التنفيذ أو المتأخرة — الأقدم أولاً.','__follow':'طلبات لم يُرد عليها وموعد متابعتها اليوم أو فات، أو متأخرة ولم تُسجَّل لها متابعة منذ 3 أيام فأكثر.','متأخر':'الطلبات المتأخرة — استخدم زر الهاتف 📞 في عمود الإجراء لتسجيل متابعة.'}[st]||'';
+  const h=document.getElementById('trkHint');if(h)h.textContent=hint;
+}
+function setTrkTab(v){const sel=document.getElementById('filterStatus');if(sel){sel.value=v;}currentPage_allReq=1;renderAllTable();}
+let currentFollowId=null;
+function openFollow(id){
+  if(!(can('reply')||can('edit'))){toast('ليس لديك صلاحية لتسجيل المتابعات','error');return;}
+  const d=getData(),req=d.requests.find(r=>r.id===id);if(!req)return;
+  currentFollowId=id;renderFollow();
+  document.getElementById('fu-date').value=fuToday();
+  ['fu-note','fu-next','fu-contact'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('fu-result').value='';document.getElementById('fu-method').selectedIndex=0;
+  document.getElementById('fu-contact').value=reqDepts(req)[0]||'';
+  openModal('followModal');
+}
+function renderFollow(){
+  const d=getData(),req=d.requests.find(r=>r.id===currentFollowId);if(!req)return;
+  const st=calcStatus(req),since=Math.floor((Date.now()-new Date(req.date).getTime())/86400000);
+  document.getElementById('followTitle').textContent='متابعة الطلب رقم: '+req.num;
+  document.getElementById('followInfo').innerHTML=`<b>${esc(req.subject)}</b><br>الإدارات: ${esc(deptText(req))} &nbsp;|&nbsp; الورود: ${esc(req.date)} (${since} يوم) &nbsp;|&nbsp; ${getBadge(st)}${st==='متأخر'?` <span style="color:var(--red);font-size:11.5px;">متأخر ${lateDays(req)} يوم عن المدة المحددة</span>`:''}`;
+  const f=reqFollowups(req).slice().sort((a,b)=>(a.date<b.date?1:a.date>b.date?-1:(b.id||0)-(a.id||0)));
+  document.getElementById('followCount').textContent='('+f.length+')';
+  const canDel=x=>currentUser&&(currentUser.isAdmin||x.by===currentUser.name);
+  document.getElementById('followList').innerHTML=f.length?f.map(x=>`<div class="fu-item"><div class="fu-h"><span class="fu-d">${esc(x.date)}</span><span class="badge b-gray">${esc(x.method||'—')}</span>${x.result?`<span class="badge b-yellow">${esc(x.result)}</span>`:''}${canDel(x)?`<button class="fu-del" aria-label="حذف المتابعة" title="حذف" onclick="deleteFollow(${x.id})"><i class="ti ti-trash"></i></button>`:''}</div>${x.contact?`<div style="font-size:12px;">مع: ${esc(x.contact)}</div>`:''}${x.note?`<div style="margin-top:3px;">${esc(x.note)}</div>`:''}${x.nextDate?`<div class="fu-next"><i class="ti ti-bell"></i> المتابعة القادمة: ${esc(x.nextDate)}</div>`:''}<div class="fu-m">سجّلها: ${esc(x.by||'—')}${x.at?' — '+esc(new Date(x.at).toLocaleString('ar-EG')):''}</div></div>`).join(''):'<div style="color:var(--text3);font-size:12.5px;padding:6px 0 10px;">لا توجد متابعات مسجلة بعد.</div>';
+  const replied=st==='تم الرد';
+  document.getElementById('followForm').style.display=replied?'none':'block';
+  document.getElementById('followReplyBtn').style.display=(replied||!can('reply'))?'none':'inline-flex';
+}
+function fuQuick(n){document.getElementById('fu-next').value=fuAddDays(n);}
+function saveFollow(){
+  const d=getData(),idx=d.requests.findIndex(r=>r.id===currentFollowId);if(idx<0)return;
+  if(!(can('reply')||can('edit'))){toast('ليس لديك صلاحية','error');return;}
+  const date=document.getElementById('fu-date').value,method=document.getElementById('fu-method').value,contact=document.getElementById('fu-contact').value.trim(),result=document.getElementById('fu-result').value,note=document.getElementById('fu-note').value.trim(),nextDate=document.getElementById('fu-next').value;
+  if(!date){toast('حدد تاريخ المتابعة','error');return;}
+  if(!note&&!result){toast('اكتب ملاحظات المتابعة أو اختر نتيجتها','error');return;}
+  if(nextDate&&nextDate<date){toast('موعد المتابعة القادمة قبل تاريخ المتابعة','error');return;}
+  const req=d.requests[idx];
+  const fu={id:Date.now(),date,method,contact,result,note,nextDate,by:currentUser?currentUser.name:'',byRole:currentUser?currentUser.role:'',at:new Date().toISOString()};
+  req.followups=reqFollowups(req).concat(fu);
+  saveD(d,{type:'followup',action:'تسجيل متابعة على طلب: '+req.num});
+  toast('تم حفظ المتابعة');renderFollow();
+  ['fu-note','fu-next'].forEach(x=>document.getElementById(x).value='');document.getElementById('fu-result').value='';
+  refreshAfterFollow();
+}
+function deleteFollow(fid){
+  const d=getData(),req=d.requests.find(r=>r.id===currentFollowId);if(!req)return;
+  const f=reqFollowups(req).find(x=>x.id===fid);if(!f)return;
+  if(!(currentUser&&(currentUser.isAdmin||f.by===currentUser.name))){toast('يمكن حذف المتابعة لمن سجّلها أو للمدير فقط','error');return;}
+  if(!confirm('حذف هذه المتابعة؟'))return;
+  req.followups=reqFollowups(req).filter(x=>x.id!==fid);
+  saveD(d,{type:'followup',action:'حذف متابعة من طلب: '+req.num});
+  renderFollow();refreshAfterFollow();toast('تم حذف المتابعة');
+}
+function refreshAfterFollow(){try{renderAllTable();}catch(e){}try{renderDashboard();}catch(e){}try{updateDelayedBadge();}catch(e){}}
+function followToReply(){currentReplyId=currentFollowId;closeModal('followModal');showPage('register-reply');}
+function fuDetailBlock(req,status){
+  const f=reqFollowups(req).slice().sort((a,b)=>(a.date<b.date?1:a.date>b.date?-1:(b.id||0)-(a.id||0)));
+  if(!f.length&&status==='تم الرد')return '';
+  return `<div style="margin:12px 0 4px;"><div style="font-weight:700;font-size:13px;margin-bottom:8px;"><i class="ti ti-phone-call"></i> سجل المتابعات (${f.length})</div>${f.length?f.map(x=>`<div class="fu-item"><div class="fu-h"><span class="fu-d">${esc(x.date)}</span><span class="badge b-gray">${esc(x.method||'—')}</span>${x.result?`<span class="badge b-yellow">${esc(x.result)}</span>`:''}</div>${x.contact?`<div style="font-size:12px;">مع: ${esc(x.contact)}</div>`:''}${x.note?`<div style="margin-top:3px;">${esc(x.note)}</div>`:''}${x.nextDate?`<div class="fu-next"><i class="ti ti-bell"></i> القادمة: ${esc(x.nextDate)}</div>`:''}<div class="fu-m">${esc(x.by||'—')}</div></div>`).join(''):'<div style="color:var(--text3);font-size:12.5px;">لا توجد متابعات مسجلة.</div>'}</div>`;
+}
+function exportFollowLog(){
+  const d=getData(),rows=[];
+  d.requests.forEach(r=>reqFollowups(r).forEach(x=>rows.push([r.num,r.subject,r.dept,calcStatus(r),x.date,x.method||'',x.contact||'',x.result||'',x.note||'',x.nextDate||'',x.by||'',x.at?new Date(x.at).toLocaleString('ar-EG'):''])));
+  if(!rows.length){toast('لا توجد متابعات مسجلة للتصدير','error');return;}
+  rows.sort((a,b)=>a[4]<b[4]?1:-1);
+  const headers=['رقم الطلب','الموضوع','الإدارة','حالة الطلب','تاريخ المتابعة','الوسيلة','تمت مع','النتيجة','الملاحظات','موعد المتابعة القادمة','سجّلها','وقت التسجيل'];
+  const csv='\uFEFF'+headers.join(',')+'\n'+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download='سجل_المتابعات_'+new Date().toISOString().split('T')[0]+'.csv';a.click();toast('تم تصدير سجل المتابعات');
+}
 
 // ── DASHBOARD ──
 function renderDashboard(){
@@ -1350,7 +1504,7 @@ function renderDashboard(){
   if(barChartInst)barChartInst.destroy();
   barChartInst=new Chart(document.getElementById('barChart'),{type:'bar',data:{labels:topDepts.map(d=>d[0].replace('إدارة ','').replace('الإدارة ','')),datasets:[{data:topDepts.map(d=>d[1]),backgroundColor:[cssVar('--blue'),cssVar('--green'),cssVar('--yellow'),cssVar('--red'),'#64748b'],borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{rtl:true}},scales:{x:{grid:{display:false},ticks:{color:'#64748b',font:{size:10,family:'Tajawal'},maxRotation:0}},y:{grid:{color:'rgba(30,45,74,0.8)'},ticks:{color:'#64748b'},min:0}}}});
   const delayed5=reqs.filter(r=>r.computedStatus==='متأخر').map(r=>({...r,days:Math.floor((Date.now()-new Date(r.date).getTime())/86400000)})).sort((a,b)=>b.days-a.days).slice(0,5);
-  document.getElementById('delayedTbl').innerHTML=`<thead><tr><th>رقم الطلب</th><th>الموضوع</th><th>الإدارة</th><th>الأيام</th></tr></thead><tbody>${delayed5.length?delayed5.map(r=>`<tr onclick="openDetail(${r.id})" style="cursor:pointer;"><td style="color:var(--blue-light);">${esc(r.num)}</td><td>${esc(r.subject.substring(0,30))}${r.subject.length>30?'...':''}</td><td>${esc(deptText(r,true))}</td><td style="color:var(--red);font-weight:700;">${r.days}</td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text3);">لا توجد طلبات متأخرة</td></tr>'}</tbody>`;
+  document.getElementById('delayedTbl').innerHTML=`<thead><tr><th>رقم الطلب</th><th>الموضوع</th><th>الإدارة</th><th>الأيام</th><th>المتابعة</th></tr></thead><tbody>${delayed5.length?delayed5.map(r=>`<tr onclick="openDetail(${r.id})" style="cursor:pointer;"><td style="color:var(--blue-light);">${esc(r.num)}</td><td>${esc(r.subject.substring(0,30))}${r.subject.length>30?'...':''}</td><td>${esc(deptText(r,true))}</td><td style="color:var(--red);font-weight:700;">${r.days}</td><td>${fuCell(r)}</td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3);">لا توجد طلبات متأخرة</td></tr>'}</tbody>`;
   const recent5=[...reqs].slice(0,5);
   document.getElementById('recentTbl').innerHTML=`<thead><tr><th>رقم الطلب</th><th>الموضوع</th><th>تاريخ الورود</th><th>الحالة</th></tr></thead><tbody>${recent5.length?recent5.map(r=>`<tr onclick="openDetail(${r.id})" style="cursor:pointer;"><td style="color:var(--blue-light);">${esc(r.num)}</td><td>${esc(r.subject.substring(0,28))}${r.subject.length>28?'...':''}</td><td>${esc(r.date)}</td><td>${getBadge(r.computedStatus)}</td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text3);">لا توجد طلبات بعد</td></tr>'}</tbody>`;
 }
@@ -1382,10 +1536,10 @@ function saveSettings(){if(SERVER)return saveSettingsServer();
 }
 
 // ── EXPORT / IMPORT ──
-function exportReport(type){if(!guard('export'))return;const d=getData();let reqs=d.requests.map(r=>({...r,computedStatus:calcStatus(r)}));if(type==='delayed')reqs=reqs.filter(r=>r.computedStatus==='متأخر');else if(type==='pending')reqs=reqs.filter(r=>['جاري التنفيذ','لم يتم الرد'].includes(r.computedStatus));else if(type==='replied')reqs=reqs.filter(r=>r.computedStatus==='تم الرد');if(!reqs.length){toast('لا توجد بيانات للتصدير','error');return;}const headers=['رقم الطلب','الموضوع','الإدارة','تاريخ الورود','الأولوية','الحالة','تاريخ الرد','نص الرد','المسؤول','المسجِّل','وقت التسجيل','سجّل الرد'];const rows=reqs.map(r=>[r.num,r.subject,r.dept,r.date,r.priority||'عادي',r.computedStatus,r.replyDate||'',r.reply||'',r.handler||'',r.createdBy||'',r.createdAt?new Date(r.createdAt).toLocaleString('ar-EG'):'',r.replyBy||''].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));const csv='\uFEFF'+headers.join(',')+'\n'+rows.join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download='تقرير_الطلبات_'+new Date().toISOString().split('T')[0]+'.csv';a.click();toast('تم تصدير التقرير بنجاح');}
+function exportReport(type){if(!guard('export'))return;const d=getData();let reqs=d.requests.map(r=>({...r,computedStatus:calcStatus(r)}));if(type==='delayed')reqs=reqs.filter(r=>r.computedStatus==='متأخر');else if(type==='pending')reqs=reqs.filter(r=>['جاري التنفيذ','لم يتم الرد'].includes(r.computedStatus));else if(type==='unreplied')reqs=reqs.filter(r=>r.computedStatus!=='تم الرد');else if(type==='replied')reqs=reqs.filter(r=>r.computedStatus==='تم الرد');if(type==='followlog')return exportFollowLog();if(!reqs.length){toast('لا توجد بيانات للتصدير','error');return;}const headers=['رقم الطلب','الموضوع','الإدارة','تاريخ الورود','الأولوية','الحالة','تاريخ الرد','نص الرد','المسؤول','المسجِّل','وقت التسجيل','سجّل الرد','أيام التأخير','عدد المتابعات','تاريخ آخر متابعة','نتيجة آخر متابعة','موعد المتابعة القادمة'];const rows=reqs.map(r=>[r.num,r.subject,r.dept,r.date,r.priority||'عادي',r.computedStatus,r.replyDate||'',r.reply||'',r.handler||'',r.createdBy||'',r.createdAt?new Date(r.createdAt).toLocaleString('ar-EG'):'',r.replyBy||'',r.computedStatus==='متأخر'?lateDays(r):'',reqFollowups(r).length,(lastFollow(r)||{}).date||'',(lastFollow(r)||{}).result||'',(lastFollow(r)||{}).nextDate||''].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));const csv='\uFEFF'+headers.join(',')+'\n'+rows.join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download='تقرير_الطلبات_'+new Date().toISOString().split('T')[0]+'.csv';a.click();toast('تم تصدير التقرير بنجاح');}
 function exportJSON(){if(!guard('export'))return;const d=getData(),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}));a.download='بيانات_النظام_'+new Date().toISOString().split('T')[0]+'.json';a.click();toast('تم تصدير البيانات');}
 function importJSON(input){if(!guardAdmin())return;const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{const p=JSON.parse(e.target.result);if(!p.requests)throw new Error();const d=getData();let merged;if(SERVER){const nums=new Set(d.requests.map(r=>r.num));merged={...d,requests:[...p.requests.filter(r=>!nums.has(r.num)).map(r=>({...r,id:r.id||Date.now()+Math.random()})),...d.requests]};_importing=true;}else{merged={...p,users:d.users.length?d.users:p.users||[]};}setData(merged);toast('تم استيراد البيانات: '+p.requests.length+' طلب');renderDashboard();updateDelayedBadge();}catch(err){toast('ملف غير صالح','error');}};r.readAsText(f);input.value='';}
-function printTable(){if(!guard('export'))return;const d=getData(),reqs=d.requests.map(r=>({...r,computedStatus:calcStatus(r)})),s=getSettings(),win=window.open('','_blank');win.document.write(`<html dir="rtl"><head><meta charset="UTF-8"><title>تقرير الطلبات</title><style>body{font-family:Tajawal,Arial,sans-serif;direction:rtl;padding:20px;}h2{margin-bottom:10px;}table{width:100%;border-collapse:collapse;font-size:12px;}th{background:#ddd;padding:6px;border:1px solid #ccc;text-align:right;}td{padding:5px;border:1px solid #eee;}@media print{button{display:none;}}</style></head><body><h2>${esc(s.company)} — تقرير متابعة الكتب الدورية</h2><p>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-EG')}</p><table><thead><tr><th>رقم الطلب</th><th>الموضوع</th><th>الإدارة</th><th>تاريخ الورود</th><th>الحالة</th><th>تاريخ الرد</th><th>المسؤول</th><th>المسجِّل</th></tr></thead><tbody>${reqs.map(r=>`<tr><td>${esc(r.num)}</td><td>${esc(r.subject)}</td><td>${esc(r.dept)}</td><td>${esc(r.date)}</td><td>${esc(r.computedStatus)}</td><td>${esc(r.replyDate||'—')}</td><td>${esc(r.handler||'—')}</td><td>${esc(r.createdBy||'—')}</td></tr>`).join('')}</tbody></table><script>window.print();<\/script></body></html>`);win.document.close();}
+function printTable(){if(!guard('export'))return;const d=getData(),reqs=d.requests.map(r=>({...r,computedStatus:calcStatus(r)})),s=getSettings(),win=window.open('','_blank');win.document.write(`<html dir="rtl"><head><meta charset="UTF-8"><title>تقرير الطلبات</title><style>body{font-family:Tajawal,Arial,sans-serif;direction:rtl;padding:20px;}h2{margin-bottom:10px;}table{width:100%;border-collapse:collapse;font-size:12px;}th{background:#ddd;padding:6px;border:1px solid #ccc;text-align:right;}td{padding:5px;border:1px solid #eee;}@media print{button{display:none;}}</style></head><body><h2>${esc(s.company)} — تقرير متابعة الكتب الدورية</h2><p>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-EG')}</p><table><thead><tr><th>رقم الطلب</th><th>الموضوع</th><th>الإدارة</th><th>تاريخ الورود</th><th>الحالة</th><th>المتابعات</th><th>تاريخ الرد</th><th>المسؤول</th><th>المسجِّل</th></tr></thead><tbody>${reqs.map(r=>`<tr><td>${esc(r.num)}</td><td>${esc(r.subject)}</td><td>${esc(r.dept)}</td><td>${esc(r.date)}</td><td>${esc(r.computedStatus)}${r.computedStatus==='متأخر'?' (+'+lateDays(r)+' يوم)':''}</td><td>${reqFollowups(r).length?reqFollowups(r).length+' — آخرها '+esc((lastFollow(r)||{}).date||''):'—'}</td><td>${esc(r.replyDate||'—')}</td><td>${esc(r.handler||'—')}</td><td>${esc(r.createdBy||'—')}</td></tr>`).join('')}</tbody></table><script>window.print();<\/script></body></html>`);win.document.close();}
 function clearData(){if(!guardAdmin())return;if(SERVER){return askPassword('حذف جميع الطلبات','سيتم حذف جميع الطلبات نهائياً. أدخل كلمة المرور للتأكيد.',()=>{const d=getData();d.requests=[];saveD(d,{type:'delete',action:'حذف جميع الطلبات'});toast('تم حذف جميع الطلبات');renderDashboard();updateDelayedBadge();});}askPassword('حذف جميع البيانات','تحذير: هذه العملية ستحذف جميع البيانات نهائياً. أدخل كلمة المرور للتأكيد.',()=>{const d=getData(),pwd=currentUser?currentUser.pwd:'1234',s=d.settings||{},users=d.users||[];localStorage.removeItem(STORE_KEY);_cache=null;const fresh=getData();fresh.settings={...s};fresh.users=users;setData(fresh);toast('تم حذف جميع البيانات');renderDashboard();updateDelayedBadge();});}
 
 
