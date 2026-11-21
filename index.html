@@ -353,7 +353,8 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
 @media print{#wmMark{opacity:.08!important;filter:grayscale(1)!important;display:block!important;background-size:60% auto}#wmMark.off{display:none!important}}
 .wm-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12.5px}
 .wm-row input[type=range]{flex:1;min-width:140px}
-.pr-prog{height:6px;background:var(--bg4);border-radius:4px;overflow:hidden;min-width:70px}.pr-prog i{display:block;height:100%;background:var(--green)}.pr-st{display:grid;grid-template-columns:22px 1.3fr 150px 1.5fr;gap:6px;align-items:center;margin-bottom:6px;font-size:12px}.pr-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}@media(max-width:700px){.pr-st{grid-template-columns:22px 1fr}.pr-kpi{grid-template-columns:1fr 1fr}}
+
+.ptl{border-right:3px solid var(--border2);padding:0 14px 12px 0;margin-right:8px}.ptl.done{border-color:var(--green)}.ptl.cur{border-color:var(--blue)}.ptl.late{border-color:var(--red)}
 </style>
 </head>
 <body>
@@ -523,25 +524,30 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
     <div class="sidebar" id="sidebar">
       <div class="nav-section">
         <div class="nav-section-title">الرئيسية</div>
-        <div class="nav-item active" onclick="showPage('dashboard')"><i class="ti ti-layout-dashboard"></i> لوحة التحكم</div>
+        <div class="nav-item active" data-mod="l" onclick="showPage('dashboard')"><i class="ti ti-layout-dashboard"></i> لوحة التحكم</div>
       </div>
       <hr class="nav-divider">
-      <div class="nav-section">
-        <div class="nav-section-title">الطلبات</div>
+      <div class="nav-section" data-mod="l">
+        <div class="nav-section-title">الكتب الدورية</div>
         <div class="nav-item" onclick="showPage('new-request')"><i class="ti ti-file-plus"></i> إدخال طلب جديد</div>
         <div class="nav-item" onclick="showPage('register-reply')"><i class="ti ti-message-reply"></i> تسجيل رد</div>
         <div class="nav-item" onclick="showPage('all-requests')"><i class="ti ti-list-check"></i> متابعة الطلبات <span class="nav-badge" id="delayedBadge" style="display:none;">0</span></div>
       </div>
       <hr class="nav-divider">
-      <div class="nav-section">
-        <div class="nav-section-title">المشتريات</div>
-        <div class="nav-item" id="navPurch" onclick="showPage('purchases')" style="display:none"><i class="ti ti-shopping-cart"></i> المشتريات الخارجية</div>
-      </div>
-      <hr class="nav-divider">
-      <div class="nav-section">
+      <div class="nav-section" data-mod="l">
         <div class="nav-section-title">التقارير</div>
         <div class="nav-item" onclick="showPage('stats')"><i class="ti ti-chart-pie"></i> الإحصائيات</div>
         <div class="nav-item" onclick="showPage('reports')"><i class="ti ti-report"></i> التقارير</div>
+      </div>
+      <hr class="nav-divider" data-mod="p">
+      <div class="nav-section" data-mod="p">
+        <div class="nav-section-title">طلبات الشراء الخارجية</div>
+        <div class="nav-item" id="navPurDash" onclick="showPage('pur-dash')"><i class="ti ti-layout-dashboard"></i> لوحة المشتريات</div>
+        <div class="nav-item" id="navPurNew" onclick="purEditId=null;showPage('pur-new')"><i class="ti ti-file-plus"></i> طلب شراء جديد</div>
+        <div class="nav-item" onclick="showPage('pur-list')"><i class="ti ti-truck-delivery"></i> متابعة المشتريات <span class="nav-badge" id="purBadge" style="display:none;">0</span></div>
+      </div>
+      <hr class="nav-divider">
+      <div class="nav-section">
         <div class="nav-item" onclick="showPage('audit-log')"><i class="ti ti-list-details"></i> سجل النشاط</div>
       </div>
       <hr class="nav-divider">
@@ -674,6 +680,73 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
         </div>
       </div>
 
+
+      <div id="page-pur-dash" class="page">
+        <div class="page-header"><div><div class="page-title">لوحة المشتريات</div><div class="page-sub">نظرة المدير على طلبات الشراء الخارجية</div></div></div>
+        <div id="purKpi" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px;"></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-bottom:14px;">
+          <div class="card"><div class="card-header"><div class="card-title"><i class="ti ti-route"></i> توزيع الطلبات المفتوحة على المراحل</div></div><div id="purStages"></div></div>
+          <div class="card"><div class="card-header"><div class="card-title"><i class="ti ti-building"></i> حسب الإدارة الطالبة (المفتوحة)</div></div><div id="purDepts"></div></div>
+        </div>
+        <div class="card"><div class="card-header"><div class="card-title"><i class="ti ti-alert-circle" style="color:var(--red);"></i> طلبات متأخرة تحتاج تدخلاً</div><span class="card-action" onclick="showPage('pur-list');setPurTab('متأخر')">عرض الكل ومتابعتها</span></div><div class="tbl-wrap"><table class="tbl" id="purLateTbl"></table></div></div>
+      </div>
+
+      <div id="page-pur-list" class="page">
+        <div class="page-header"><div><div class="page-title">متابعة طلبات الشراء الخارجية</div><div class="page-sub">المراحل من عرض السعر حتى الاستلام</div></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-secondary btn-sm" onclick="exportPurCSV()"><i class="ti ti-file-spreadsheet"></i> تصدير</button><button class="btn btn-secondary btn-sm" onclick="exportPurFollow()"><i class="ti ti-phone-call"></i> سجل المتابعات</button><button class="btn btn-primary btn-sm" id="purAddBtn" onclick="purEditId=null;showPage('pur-new')"><i class="ti ti-plus"></i> طلب شراء جديد</button></div></div>
+        <div class="trk-tabs" id="purTabs"></div><div class="trk-hint" id="purHint"></div>
+        <div class="search-bar"><div class="search-input-wrap"><i class="ti ti-search"></i><input class="form-input search-input" id="purSearch" placeholder="بحث بالرقم أو البند أو المورد..." oninput="renderPurList()"></div><select class="form-select filter-select" id="purFilterDept" onchange="renderPurList()"><option value="">كل الإدارات</option></select></div>
+        <div class="card"><div class="tbl-wrap"><table class="tbl" id="purTbl"></table></div></div>
+      </div>
+
+      <div id="page-pur-new" class="page">
+        <div class="page-header"><div><div class="page-title" id="purFormTitle">طلب شراء خارجي جديد</div><div class="page-sub">الحقول التي عليها (*) إلزامية</div></div></div>
+        <div class="card" style="max-width:900px;"><div class="form-grid">
+          <div class="form-group"><label class="form-label">رقم الطلب <span class="req">*</span></label><input class="form-input" id="p-num"></div>
+          <div class="form-group"><label class="form-label">تاريخ الطلب <span class="req">*</span></label><input type="date" class="form-input" id="p-date"></div>
+          <div class="form-group full"><label class="form-label">الإدارات الطالبة <span class="req">*</span></label>
+          <div class="dept-picker">
+              <div class="dept-chips" id="e-dept-chips"></div>
+              <div class="dept-add-row"><select class="form-select" id="e-dept-sel" onchange="deptPick('e')"></select>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="deptNewToggle('e')"><i class="ti ti-plus"></i> إدارة جديدة</button></div>
+              <div class="dept-new" id="e-dept-new" style="display:none"><input class="form-input" id="e-dept-newname" placeholder="اسم الإدارة الجديدة..." onkeydown="if(event.key==='Enter'){event.preventDefault();deptNewConfirm('e');}"><button type="button" class="btn btn-primary btn-sm" onclick="deptNewConfirm('e')">إضافة</button></div>
+            </div>
+          </div>
+          <div class="form-group full"><label class="form-label">البند / الوصف <span class="req">*</span></label><input class="form-input" id="p-subject" placeholder="وصف المادة أو القطعة"></div>
+          <div class="form-group"><label class="form-label">الكمية والوحدة <span class="req">*</span></label><input class="form-input" id="p-qty" placeholder="مثال: 10 قطعة"></div>
+          <div class="form-group"><label class="form-label">المورد الخارجي <span class="req">*</span></label><input class="form-input" id="p-supplier"></div>
+          <div class="form-group"><label class="form-label">بلد المنشأ</label><input class="form-input" id="p-origin"></div>
+          <div class="form-group"><label class="form-label">رقم أمر الشراء / العقد</label><input class="form-input" id="p-po"></div>
+          <div class="form-group" id="p-amount-grp"><label class="form-label">المبلغ <span style="font-size:10.5px;color:var(--yellow);">(يظهر للمدير فقط)</span></label><div style="display:flex;gap:6px;"><input class="form-input" id="p-amount" inputmode="decimal" style="flex:2;"><input class="form-input" id="p-currency" placeholder="العملة" style="flex:1;"></div></div>
+          <div class="form-group"><label class="form-label">المرحلة الحالية <span class="req">*</span></label><select class="form-select" id="p-stage"><option value="0">عروض الأسعار</option><option value="1">الترسية والتعاقد</option><option value="2">فتح الاعتماد / التحويل</option><option value="3">الشحن</option><option value="4">الجمارك والإفراج</option><option value="5">الاستلام</option><option value="6">تم الاستلام (مغلق)</option></select></div>
+          <div class="form-group"><label class="form-label">موعد المرحلة القادمة <span class="req">*</span></label><input type="date" class="form-input" id="p-nextdue"></div>
+          <div class="form-group"><label class="form-label">موعد الاستلام المتوقع <span class="req">*</span></label><input type="date" class="form-input" id="p-receiptdue"></div>
+          <div class="form-group"><label class="form-label">المسؤول عن المتابعة</label><input class="form-input" id="p-handler"></div>
+          <div class="form-group"><label class="form-label">الأولوية</label><select class="form-select" id="p-priority"><option>عادي</option><option>مستعجل</option><option>عاجل جداً</option></select></div>
+          <div class="form-group full"><label class="form-label">ملاحظات</label><textarea class="form-textarea" id="p-details"></textarea></div>
+          <div class="form-group full"><label class="form-label">المرفقات (عرض السعر، أمر الشراء، بوليصة الشحن، مستندات الجمارك)</label>
+          <div class="att-box" id="p-att-box">
+              <div class="att-btns">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('p-att-cam').click()"><i class="ti ti-camera"></i> تصوير بالموبايل</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="attLinkToggle('p')"><i class="ti ti-link"></i> إضافة رابط (بدون تخزين)</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('p-att-file').click()"><i class="ti ti-scan"></i> رفع من الاسكنر / ملف</button>
+              </div>
+              <input type="file" id="p-att-cam" accept="image/*" capture="environment" style="display:none" onchange="attAdd('p',this)">
+              <input type="file" id="p-att-file" accept="image/*,application/pdf" multiple style="display:none" onchange="attAdd('p',this)">
+              <div class="att-link-row" id="p-att-linkrow" style="display:none">
+                <input class="form-input" id="p-att-url" dir="ltr" placeholder="https://... أو \\server\scans\file.pdf" onkeydown="if(event.key==='Enter'){event.preventDefault();attLinkAdd('p');}">
+                <input class="form-input" id="p-att-lname" placeholder="اسم المرفق (اختياري)" onkeydown="if(event.key==='Enter'){event.preventDefault();attLinkAdd('p');}">
+                <button type="button" class="btn btn-primary btn-sm" onclick="attLinkAdd('p')">إضافة</button>
+              </div>
+              <div class="att-grid" id="p-att-grid"></div>
+              <div class="att-hint">الأفضل إضافة رابط للصورة (Drive / OneDrive / مجلد الشبكة) فلا يستهلك أي مساحة تخزين. الرفع المباشر: حتى 5 ملفات (صور أو PDF)، ويمكن السحب والإفلات أو لصق صورة (Ctrl+V).</div>
+            </div>
+          </div>
+          <div class="form-group full"><label class="form-label"><i class="ti ti-lock"></i> المسجِّل</label><div class="registrar-box"><i class="ti ti-user-check"></i><input class="form-input" id="p-registrar" readonly tabindex="-1" aria-readonly="true"></div></div>
+        </div>
+        <div style="margin-top:18px;display:flex;gap:10px;"><button class="btn btn-primary" onclick="savePur()"><i class="ti ti-device-floppy"></i> حفظ الطلب</button><button class="btn btn-secondary" onclick="showPage('pur-list')">إلغاء</button></div></div>
+      </div>
+
       <div id="page-stats" class="page">
         <div class="page-header"><div><div class="page-title">الإحصائيات</div><div class="page-sub">تحليل شامل لبيانات الطلبات</div></div></div>
         <div class="stats-grid">
@@ -703,15 +776,6 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
         <div class="card"><div id="auditLogList"></div></div>
       </div>
 
-      <div id="page-purchases" class="page">
-        <div class="page-header"><div><div class="page-title">متابعة المشتريات الخارجية</div><div class="page-sub">قسم مستقل — لا يظهر لمستخدمي الكتب الدورية</div></div>
-          <div style="display:flex;gap:8px"><button class="btn btn-secondary btn-sm" onclick="exportPurch()"><i class="ti ti-download"></i> تصدير</button><button class="btn btn-primary btn-sm" onclick="openPurch()"><i class="ti ti-plus"></i> طلب شراء جديد</button></div></div>
-        <div class="card" id="pr-sync" style="margin-bottom:12px"></div>
-        <div class="pr-kpi" id="pr-kpi"></div>
-        <div class="search-bar"><div class="search-input-wrap"><i class="ti ti-search"></i><input class="form-input search-input" id="pr-q" placeholder="بحث برقم الطلب أو الصنف أو المورد..." oninput="renderPurch()"></div>
-          <select class="form-select filter-select" id="pr-fs" onchange="renderPurch()"><option value="">كل الحالات</option><option>جاري</option><option>متأخر</option><option>مكتمل</option></select></div>
-        <div class="card"><div class="tbl-wrap"><table class="tbl" id="pr-tbl"></table></div></div>
-      </div>
       <div id="page-settings" class="page">
         <div class="page-header"><div><div class="page-title">الإعدادات</div><div class="page-sub">إعدادات النظام والمستخدمين</div></div></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:960px;">
@@ -728,11 +792,6 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
             <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">الحد الأقصى 10 مستخدمين — المسؤول فقط يستطيع الإضافة والحذف</div>
             <div id="usersList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
             <button class="btn btn-primary btn-sm" id="addUserBtn" onclick="openAddUserModal()"><i class="ti ti-user-plus"></i> إضافة مستخدم جديد</button>
-          </div>
-          <div class="card" id="areaCard" style="display:none">
-            <div class="card-title" style="margin-bottom:4px;"><i class="ti ti-lock"></i> نطاق عمل المستخدمين</div>
-            <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">كل مستخدم يرى قسماً واحداً فقط: الكتب الدورية أو المشتريات. الأقسام منفصلة تماماً، والمسؤول وحده يرى الاثنين. المستخدمون الحاليون والجدد يبدؤون «كتب دورية».</div>
-            <div id="areaList" style="display:flex;flex-direction:column;gap:6px;"></div>
           </div>
           <div class="card">
             <div class="card-title" style="margin-bottom:4px;"><i class="ti ti-droplet"></i> العلامة المائية للشعار</div>
@@ -814,18 +873,6 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
   </div>
 </div>
 
-<div class="modal-overlay" id="purchModal" role="dialog" aria-modal="true" aria-labelledby="purchTitle" onkeydown="handleModalKey(event,'purchModal')">
-  <div class="modal" style="max-width:820px">
-    <div class="modal-header"><div class="modal-title" id="purchTitle">طلب شراء خارجي</div><div class="modal-close" role="button" tabindex="0" aria-label="إغلاق" onclick="closeModal('purchModal')"><i class="ti ti-x"></i></div></div>
-    <div class="modal-body" id="purchBody"></div>
-    <div class="modal-footer">
-      <button class="btn btn-primary btn-sm" onclick="savePurch()"><i class="ti ti-check"></i> حفظ</button>
-      <button class="btn btn-danger btn-sm" id="purchDel" onclick="delPurch()"><i class="ti ti-trash"></i> حذف</button>
-      <button class="btn btn-secondary btn-sm" onclick="closeModal('purchModal')">إغلاق</button>
-    </div>
-  </div>
-</div>
-
 <div class="modal-overlay" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailTitle" onkeydown="handleModalKey(event,'detailModal')">
   <div class="modal">
     <div class="modal-header"><div class="modal-title" id="detailTitle">تفاصيل الطلب</div><div class="modal-close" role="button" tabindex="0" aria-label="إغلاق" onclick="closeModal('detailModal')" onkeydown="if(event.key==='Enter'||event.key===' ')closeModal('detailModal')"><i class="ti ti-x"></i></div></div>
@@ -868,6 +915,34 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
   </div>
 </div>
 
+<div class="modal-overlay" id="purDetailModal" role="dialog" aria-modal="true" aria-labelledby="purDetailTitle" onkeydown="handleModalKey(event,'purDetailModal')">
+  <div class="modal" style="width:640px;max-width:96vw;">
+    <div class="modal-header"><div class="modal-title" id="purDetailTitle">طلب شراء</div><div class="modal-close" role="button" tabindex="0" aria-label="إغلاق" onclick="closeModal('purDetailModal')" onkeydown="if(event.key==='Enter'||event.key===' ')closeModal('purDetailModal')"><i class="ti ti-x"></i></div></div>
+    <div class="modal-body" id="purDetailBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary btn-sm" id="pdStageBtn" onclick="closeModal('purDetailModal');openPurStage(currentPurId)"><i class="ti ti-arrow-big-left-lines"></i> تحديث المرحلة</button>
+      <button class="btn btn-warning btn-sm" id="pdFollowBtn" onclick="closeModal('purDetailModal');openFollow(currentPurId)"><i class="ti ti-phone-call"></i> تسجيل متابعة</button>
+      <button class="btn btn-secondary btn-sm" id="pdEditBtn" onclick="closeModal('purDetailModal');purEditId=currentPurId;showPage('pur-new')"><i class="ti ti-edit"></i> تعديل</button>
+      <button class="btn btn-danger btn-sm" id="pdDelBtn" onclick="deletePur(currentPurId)"><i class="ti ti-trash"></i> حذف</button>
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('purDetailModal')">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="purStageModal" role="dialog" aria-modal="true" aria-labelledby="purStageTitle" onkeydown="handleModalKey(event,'purStageModal')">
+  <div class="modal" style="width:460px;max-width:96vw;">
+    <div class="modal-header"><div class="modal-title" id="purStageTitle">تحديث مرحلة الطلب</div><div class="modal-close" role="button" tabindex="0" aria-label="إغلاق" onclick="closeModal('purStageModal')" onkeydown="if(event.key==='Enter'||event.key===' ')closeModal('purStageModal')"><i class="ti ti-x"></i></div></div>
+    <div class="modal-body">
+      <div class="fu-info" id="purStageInfo"></div>
+      <div class="form-group" style="margin-bottom:10px;"><label class="form-label">المرحلة الجديدة <span class="req">*</span></label><select class="form-select" id="ps-stage" onchange="psToggle()"></select></div>
+      <div class="form-group" style="margin-bottom:10px;"><label class="form-label">تاريخ إتمام المرحلة السابقة <span class="req">*</span></label><input type="date" class="form-input" id="ps-date"></div>
+      <div class="form-group" id="ps-next-grp" style="margin-bottom:10px;"><label class="form-label">موعد المرحلة القادمة المتوقع <span class="req">*</span></label><input type="date" class="form-input" id="ps-next"></div>
+      <div class="form-group"><label class="form-label">ملاحظات</label><textarea class="form-textarea" id="ps-note"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-primary btn-sm" onclick="savePurStage()"><i class="ti ti-check"></i> حفظ</button><button class="btn btn-secondary btn-sm" onclick="closeModal('purStageModal')">إلغاء</button></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="userModal" role="dialog" aria-modal="true" aria-labelledby="userModalTitle" onkeydown="handleModalKey(event,'userModal')">
   <div class="modal" style="width:420px;">
     <div class="modal-header"><div class="modal-title" id="userModalTitle">إضافة مستخدم جديد</div><div class="modal-close" role="button" tabindex="0" aria-label="إغلاق" onclick="closeModal('userModal')" onkeydown="if(event.key==='Enter'||event.key===' ')closeModal('userModal')"><i class="ti ti-x"></i></div></div>
@@ -875,7 +950,7 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
       <input type="hidden" id="u-editId">
       <div class="form-group" style="margin-bottom:12px;"><label class="form-label">الاسم الكامل <span class="req">*</span></label><input class="form-input" id="u-name" placeholder="اسم المستخدم"></div>
       <div class="form-group" style="margin-bottom:12px;"><label class="form-label">الدور الوظيفي <span class="req">*</span></label>
-        <select class="form-select" id="u-role" onchange="presetPerms()"><option value="مشرف">مشرف</option><option value="موظف متابعة">موظف متابعة</option><option value="مدير قسم">مدير قسم</option><option value="مستخدم عادي">مستخدم عادي</option><option value="مشاهد (قراءة فقط)">مشاهد (قراءة فقط)</option><option value="مدير عام">مدير عام</option></select>
+        <select class="form-select" id="u-role" onchange="presetPerms()"><option value="مشرف">مشرف</option><option value="موظف متابعة">موظف متابعة</option><option value="مدير قسم">مدير قسم</option><option value="مستخدم عادي">مستخدم عادي</option><option value="مشاهد (قراءة فقط)">مشاهد (قراءة فقط)</option><option value="مدير عام">مدير عام</option><option value="موظف مشتريات">موظف مشتريات (قسم المشتريات فقط)</option></select><div style="font-size:11px;color:var(--text3);margin-top:4px;">موظف مشتريات: يرى المشتريات فقط • المدير العام والمسؤول: القسمان • بقية الأدوار: الكتب الدورية فقط</div>
       </div>
       <div class="form-group" style="margin-bottom:12px;"><label class="form-label">كلمة المرور <span class="req" id="u-pwd-req">*</span></label><input class="form-input" type="password" id="u-pwd" placeholder="كلمة مرور المستخدم"><div style="font-size:10.5px;color:var(--text3);margin-top:3px;" id="u-pwd-hint">اتركه فارغاً لعدم التغيير عند التعديل</div></div>
       <div class="form-group" style="margin-bottom:12px;"><label class="form-label">الصلاحيات</label>
@@ -1050,7 +1125,7 @@ function doLogin(){
     document.getElementById('loginPwd').value='';
     const d=getData();addAudit(d,{type:'login',action:'تسجيل دخول: '+user.name});setData(d);
     renderDashboard();updateDelayedBadge();updateOnlineUsers();updateCompanyName();
-    const s=getSettings();sessionTimeout=s.session||30;applyPerms();showPage('dashboard');
+    const s=getSettings();sessionTimeout=s.session||30;applyPerms();showPage(landingPage());
   }else{
     // فشل — زيادة العداد
     rec.count++;
@@ -1158,9 +1233,9 @@ function updateClock(){const n=new Date(),days=['الأحد','الاثنين','�
 setInterval(updateClock,1000);updateClock();
 
 // ── NAVIGATION ──
-function showPage(id){id=prGate(id);if(!id)return;if((id==='new-request'&&!can('add'))||(id==='register-reply'&&!can('reply'))||(id==='reports'&&!can('export'))||(id==='audit-log'&&!(currentUser&&currentUser.isAdmin))){toast('ليس لديك صلاحية لهذه الصفحة','error');return;}document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+id).classList.add('active');document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+id+"'"))n.classList.add('active');});if(id==='dashboard')renderDashboard();if(id==='all-requests')renderAllRequests();if(id==='stats')renderStats();if(id==='new-request')initNewRequestForm();if(id==='purchases')renderPurch();if(id==='register-reply')initReplyForm();if(id==='settings')loadSettings();if(id==='audit-log')renderAuditLog();document.getElementById('sidebar').classList.remove('open');}
+function showPage(id){if(pageBlocked(id)){toast('ليس لديك صلاحية لهذه الصفحة','error');return;}if((id==='new-request'&&!can('add'))||(id==='register-reply'&&!can('reply'))||(id==='reports'&&!can('export'))||(id==='audit-log'&&!(currentUser&&currentUser.isAdmin))){toast('ليس لديك صلاحية لهذه الصفحة','error');return;}document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+id).classList.add('active');document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+id+"'"))n.classList.add('active');});if(id==='dashboard')renderDashboard();if(id==='all-requests')renderAllRequests();if(id==='stats')renderStats();if(id==='new-request')initNewRequestForm();if(id==='register-reply')initReplyForm();if(id==='settings')loadSettings();if(id==='audit-log')renderAuditLog();if(id==='pur-dash')renderPurDash();if(id==='pur-list')renderPurList();if(id==='pur-new')initPurForm();document.getElementById('sidebar').classList.remove('open');}
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
-function refreshAllViews(){const cur=document.querySelector('.page.active');if(!cur)return;const id=cur.id.replace('page-','');if(id==='dashboard')renderDashboard();if(id==='all-requests')renderAllRequests();if(id==='stats')renderStats();if(id==='audit-log')renderAuditLog();if(id==='purchases')renderPurch();updateDelayedBadge();updateOnlineUsers();}
+function refreshAllViews(){const cur=document.querySelector('.page.active');if(!cur)return;const id=cur.id.replace('page-','');if(id==='dashboard')renderDashboard();if(id==='all-requests')renderAllRequests();if(id==='stats')renderStats();if(id==='audit-log')renderAuditLog();if(id==='pur-dash')renderPurDash();if(id==='pur-list')renderPurList();updateDelayedBadge();updateOnlineUsers();}
 
 // ── TOAST ──
 function toast(msg,type='success'){const t=document.createElement('div');t.className='toast-msg '+type;const ico={success:'check',error:'alert-circle',warning:'alert-triangle'};t.innerHTML=`<i class="ti ti-${ico[type]||'check'}"></i> ${esc(msg)}`;document.getElementById('toast').appendChild(t);setTimeout(()=>t.remove(),3500);}
@@ -1358,7 +1433,7 @@ function getBadge(s){const m={'تم الرد':'b-green','جاري التنفيذ
 function getPriorityBadge(p){if(p==='مستعجل')return`<span class="badge b-yellow">${p}</span>`;if(p==='عاجل جداً')return`<span class="badge b-red">${p}</span>`;return`<span class="badge b-gray">${p||'عادي'}</span>`;}
 
 // ── DELAYED BADGE ──
-function updateDelayedBadge(){const d=getData(),cnt=d.requests.filter(r=>calcStatus(r)==='متأخر').length,b=document.getElementById('delayedBadge');b.style.display=cnt?'inline':'none';b.textContent=cnt;}
+function updateDelayedBadge(){updatePurBadge();const d=getData(),cnt=letterReqs(d).filter(r=>calcStatus(r)==='متأخر').length,b=document.getElementById('delayedBadge');b.style.display=cnt?'inline':'none';b.textContent=cnt;}
 
 // ── NEW REQUEST ──
 function initNewRequestForm(){deptInit('f',[]);attInit('f',[]);setRegistrar('f-registrar');document.getElementById('f-num').value='';const today=new Date().toISOString().split('T')[0];document.getElementById('f-date').value=today;const s=getSettings();document.getElementById('f-deadline').value=new Date(Date.now()+(s.days||7)*86400000).toISOString().split('T')[0];}
@@ -1368,7 +1443,7 @@ function saveRequest(){
   const num=document.getElementById('f-num').value.trim(),dept=_dp.f.join(' + '),subject=document.getElementById('f-subject').value.trim(),date=document.getElementById('f-date').value;
   if(!num||!_dp.f.length||!subject||!date){toast('يرجى ملء جميع الحقول الإلزامية (واختيار إدارة واحدة على الأقل)','error');return;}
   const d=getData();
-  if(d.requests.find(r=>r.num===num)){toast('رقم الطلب موجود مسبقاً','error');return;}
+  if(letterReqs(d).find(r=>r.num===num)){toast('رقم الطلب موجود مسبقاً','error');return;}
   const req={id:Date.now(),num,date,dept,depts:_dp.f.slice(),attachments:_att.f.slice(),subject,details:document.getElementById('f-details').value.trim(),priority:document.getElementById('f-priority').value,handler:document.getElementById('f-handler').value.trim(),deadline:document.getElementById('f-deadline').value,status:'لم يتم الرد',createdAt:new Date().toISOString(),createdBy:currentUser?currentUser.name:'—',createdByRole:currentUser?currentUser.role:''};
   d.requests.unshift(req);saveD(d,{type:'add',action:'إضافة طلب: '+num+' — '+subject});
   toast('تم حفظ الطلب رقم '+esc(req.num)+' بنجاح');resetForm();updateDelayedBadge();showPage('all-requests');
@@ -1379,7 +1454,7 @@ function initReplyForm(){
   setRegistrar('r-registrar');
   const d=getData(),sel=document.getElementById('r-reqId');
   sel.innerHTML='<option value="">-- اختر رقم الطلب --</option>';
-  d.requests.filter(r=>calcStatus(r)!=='تم الرد').forEach(r=>{const opt=document.createElement('option');opt.value=r.id;opt.textContent=esc(r.num)+' — '+esc(r.subject.substring(0,40));sel.appendChild(opt);});
+  letterReqs(d).filter(r=>calcStatus(r)!=='تم الرد').forEach(r=>{const opt=document.createElement('option');opt.value=r.id;opt.textContent=esc(r.num)+' — '+esc(r.subject.substring(0,40));sel.appendChild(opt);});
   if(currentReplyId){sel.value=currentReplyId;loadReqForReply();currentReplyId=null;}
   document.getElementById('r-date').value=new Date().toISOString().split('T')[0];
 }
@@ -1408,17 +1483,17 @@ function bulkDelete(){if(!guard('delete'))return;const ids=getSelIds();if(!ids.l
 
 // ── ALL REQUESTS ──
 function renderAllRequests(){
-  const d=getData(),reqs=d.requests.map(r=>({...r,computedStatus:calcStatus(r)})),depts=[...new Set(reqs.flatMap(r=>reqDepts(r)))];
+  const d=getData(),reqs=letterReqs(d).map(r=>({...r,computedStatus:calcStatus(r)})),depts=[...new Set(reqs.flatMap(r=>reqDepts(r)))];
   const deptSel=document.getElementById('filterDept'),cur=deptSel.value;
   deptSel.innerHTML='<option value="">كل الإدارات</option>'+depts.map(dep=>`<option${dep===cur?' selected':''}>${dep}</option>`).join('');
   document.getElementById('bulkActBtn').style.display=(currentUser&&currentUser.isAdmin)?'inline-flex':'none';
   renderAllTable();
 }
 function renderAllTable(){
-  const d=getData();let reqs=d.requests.map(r=>({...r,computedStatus:calcStatus(r)}));
+  const d=getData();let reqs=letterReqs(d).map(r=>({...r,computedStatus:calcStatus(r)}));
   const q=document.getElementById('searchQ').value.toLowerCase(),st=document.getElementById('filterStatus').value,dept=document.getElementById('filterDept').value,pri=document.getElementById('filterPriority').value;
   if(q)reqs=reqs.filter(r=>r.num.toLowerCase().includes(q)||r.subject.toLowerCase().includes(q)||(r.dept||''). includes(q)||(r.handler||''). toLowerCase().includes(q)||(r.createdBy||'').toLowerCase().includes(q));
-  renderTrkTabs(d.requests.map(r=>({...r,computedStatus:calcStatus(r)})),st);
+  renderTrkTabs(letterReqs(d).map(r=>({...r,computedStatus:calcStatus(r)})),st);
   if(st==='__pending')reqs=reqs.filter(r=>r.computedStatus!=='تم الرد');else if(st==='__inwindow')reqs=reqs.filter(r=>r.computedStatus!=='تم الرد'&&r.computedStatus!=='متأخر');else if(st==='__follow')reqs=reqs.filter(needsFollow);else if(st)reqs=reqs.filter(r=>r.computedStatus===st);
   if(st==='__pending'||st==='__follow'||st==='متأخر'||st==='__inwindow')reqs.sort((a,b)=>new Date(a.date)-new Date(b.date));if(dept)reqs=reqs.filter(r=>reqDepts(r).includes(dept));if(pri)reqs=reqs.filter(r=>(r.priority||'عادي')===pri);
   const total=reqs.length,totalPages=Math.max(1,Math.ceil(total/PAGE_SIZE));
@@ -1435,7 +1510,7 @@ function renderPagination(total,totalPages){
   h+=`<div class="pg-btn ${currentPage_allReq===totalPages?'disabled':''}" onclick="goPage(${currentPage_allReq+1})"><i class="ti ti-chevron-left"></i></div><span class="pg-info">${total} طلب</span>`;
   pg.innerHTML=h;
 }
-function goPage(n){const d=getData(),tp=Math.max(1,Math.ceil(d.requests.length/PAGE_SIZE));if(n<1||n>tp)return;currentPage_allReq=n;renderAllTable();}
+function goPage(n){const d=getData(),tp=Math.max(1,Math.ceil(letterReqs(d).length/PAGE_SIZE));if(n<1||n>tp)return;currentPage_allReq=n;renderAllTable();}
 
 
 // ── متابعة الطلبات غير المردود عليها (داخل المدة / المتأخرة) ──
@@ -1444,9 +1519,9 @@ function fuAddDays(n){const d=new Date();d.setDate(d.getDate()+n);return d.getFu
 function fuDiff(a,b){return Math.floor((new Date(b).getTime()-new Date(a).getTime())/86400000);}
 function reqFollowups(r){return Array.isArray(r.followups)?r.followups:[];}
 function lastFollow(r){const f=reqFollowups(r);if(!f.length)return null;return f.slice().sort((a,b)=>(a.date<b.date?1:a.date>b.date?-1:(b.id||0)-(a.id||0)))[0];}
-function lateDays(r){const lim=(getSettings().days||7),since=Math.floor((Date.now()-new Date(r.date).getTime())/86400000);return Math.max(0,since-lim);}
+function lateDays(r){if(isPur(r))return pLate(r);const lim=(getSettings().days||7),since=Math.floor((Date.now()-new Date(r.date).getTime())/86400000);return Math.max(0,since-lim);}
 function needsFollow(r){
-  const cs=r.computedStatus||calcStatus(r);if(cs==='تم الرد')return false;
+  const cs=isPur(r)?calcPStatus(r):(r.computedStatus||calcStatus(r));if(cs==='تم الرد'||cs==='تم الاستلام')return false;
   const l=lastFollow(r),t=fuToday();
   if(l&&l.nextDate)return l.nextDate<=t;
   if(cs!=='متأخر')return false;
@@ -1480,16 +1555,16 @@ function openFollow(id){
 }
 function renderFollow(){
   const d=getData(),req=d.requests.find(r=>r.id===currentFollowId);if(!req)return;
-  const st=calcStatus(req),since=Math.floor((Date.now()-new Date(req.date).getTime())/86400000);
+  const pur=isPur(req),st=pur?calcPStatus(req):calcStatus(req),since=Math.floor((Date.now()-new Date(req.date).getTime())/86400000);
   document.getElementById('followTitle').textContent='متابعة الطلب رقم: '+req.num;
-  document.getElementById('followInfo').innerHTML=`<b>${esc(req.subject)}</b><br>الإدارات: ${esc(deptText(req))} &nbsp;|&nbsp; الورود: ${esc(req.date)} (${since} يوم) &nbsp;|&nbsp; ${getBadge(st)}${st==='متأخر'?` <span style="color:var(--red);font-size:11.5px;">متأخر ${lateDays(req)} يوم عن المدة المحددة</span>`:''}`;
+  document.getElementById('followInfo').innerHTML=`<b>${esc(req.subject)}</b><br>الإدارات: ${esc(deptText(req))} &nbsp;|&nbsp; الورود: ${esc(req.date)} (${since} يوم) &nbsp;|&nbsp; ${pur?pBadge(req):getBadge(st)}${st==='متأخر'?` <span style="color:var(--red);font-size:11.5px;">متأخر ${lateDays(req)} يوم عن المدة المحددة</span>`:''}`;
   const f=reqFollowups(req).slice().sort((a,b)=>(a.date<b.date?1:a.date>b.date?-1:(b.id||0)-(a.id||0)));
   document.getElementById('followCount').textContent='('+f.length+')';
   const canDel=x=>currentUser&&(currentUser.isAdmin||x.by===currentUser.name);
   document.getElementById('followList').innerHTML=f.length?f.map(x=>`<div class="fu-item"><div class="fu-h"><span class="fu-d">${esc(x.date)}</span><span class="badge b-gray">${esc(x.method||'—')}</span>${x.result?`<span class="badge b-yellow">${esc(x.result)}</span>`:''}${canDel(x)?`<button class="fu-del" aria-label="حذف المتابعة" title="حذف" onclick="deleteFollow(${x.id})"><i class="ti ti-trash"></i></button>`:''}</div>${x.contact?`<div style="font-size:12px;">مع: ${esc(x.contact)}</div>`:''}${x.note?`<div style="margin-top:3px;">${esc(x.note)}</div>`:''}${x.nextDate?`<div class="fu-next"><i class="ti ti-bell"></i> المتابعة القادمة: ${esc(x.nextDate)}</div>`:''}<div class="fu-m">سجّلها: ${esc(x.by||'—')}${x.at?' — '+esc(new Date(x.at).toLocaleString('ar-EG')):''}</div></div>`).join(''):'<div style="color:var(--text3);font-size:12.5px;padding:6px 0 10px;">لا توجد متابعات مسجلة بعد.</div>';
-  const replied=st==='تم الرد';
+  const replied=st==='تم الرد'||st==='تم الاستلام';
   document.getElementById('followForm').style.display=replied?'none':'block';
-  document.getElementById('followReplyBtn').style.display=(replied||!can('reply'))?'none':'inline-flex';
+  document.getElementById('followReplyBtn').style.display=(replied||pur||!can('reply'))?'none':'inline-flex';
 }
 function fuQuick(n){document.getElementById('fu-next').value=fuAddDays(n);}
 function saveFollow(){
@@ -1516,26 +1591,171 @@ function deleteFollow(fid){
   saveD(d,{type:'followup',action:'حذف متابعة من طلب: '+req.num});
   renderFollow();refreshAfterFollow();toast('تم حذف المتابعة');
 }
-function refreshAfterFollow(){try{renderAllTable();}catch(e){}try{renderDashboard();}catch(e){}try{updateDelayedBadge();}catch(e){}}
+function refreshAfterFollow(){try{refreshPur();}catch(e){}try{renderAllTable();}catch(e){}try{renderDashboard();}catch(e){}try{updateDelayedBadge();}catch(e){}}
 function followToReply(){currentReplyId=currentFollowId;closeModal('followModal');showPage('register-reply');}
 function fuDetailBlock(req,status){
   const f=reqFollowups(req).slice().sort((a,b)=>(a.date<b.date?1:a.date>b.date?-1:(b.id||0)-(a.id||0)));
   if(!f.length&&status==='تم الرد')return '';
   return `<div style="margin:12px 0 4px;"><div style="font-weight:700;font-size:13px;margin-bottom:8px;"><i class="ti ti-phone-call"></i> سجل المتابعات (${f.length})</div>${f.length?f.map(x=>`<div class="fu-item"><div class="fu-h"><span class="fu-d">${esc(x.date)}</span><span class="badge b-gray">${esc(x.method||'—')}</span>${x.result?`<span class="badge b-yellow">${esc(x.result)}</span>`:''}</div>${x.contact?`<div style="font-size:12px;">مع: ${esc(x.contact)}</div>`:''}${x.note?`<div style="margin-top:3px;">${esc(x.note)}</div>`:''}${x.nextDate?`<div class="fu-next"><i class="ti ti-bell"></i> القادمة: ${esc(x.nextDate)}</div>`:''}<div class="fu-m">${esc(x.by||'—')}</div></div>`).join(''):'<div style="color:var(--text3);font-size:12.5px;">لا توجد متابعات مسجلة.</div>'}</div>`;
 }
-function exportFollowLog(){
+function exportFollowLog(pur){
   const d=getData(),rows=[];
-  d.requests.forEach(r=>reqFollowups(r).forEach(x=>rows.push([r.num,r.subject,r.dept,calcStatus(r),x.date,x.method||'',x.contact||'',x.result||'',x.note||'',x.nextDate||'',x.by||'',x.at?new Date(x.at).toLocaleString('ar-EG'):''])));
+  (pur?purReqs(d):letterReqs(d)).forEach(r=>reqFollowups(r).forEach(x=>rows.push([r.num,r.subject,r.dept,pur?calcPStatus(r):calcStatus(r),x.date,x.method||'',x.contact||'',x.result||'',x.note||'',x.nextDate||'',x.by||'',x.at?new Date(x.at).toLocaleString('ar-EG'):''])));
   if(!rows.length){toast('لا توجد متابعات مسجلة للتصدير','error');return;}
   rows.sort((a,b)=>a[4]<b[4]?1:-1);
   const headers=['رقم الطلب','الموضوع','الإدارة','حالة الطلب','تاريخ المتابعة','الوسيلة','تمت مع','النتيجة','الملاحظات','موعد المتابعة القادمة','سجّلها','وقت التسجيل'];
   const csv='\uFEFF'+headers.join(',')+'\n'+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download='سجل_المتابعات_'+new Date().toISOString().split('T')[0]+'.csv';a.click();toast('تم تصدير سجل المتابعات');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download=(pur?'سجل_متابعات_المشتريات_':'سجل_المتابعات_')+new Date().toISOString().split('T')[0]+'.csv';a.click();toast('تم تصدير سجل المتابعات');
 }
+
+
+// ═════════ قسم طلبات الشراء الخارجية ═════════
+const P_STAGES=['عروض الأسعار','الترسية والتعاقد','فتح الاعتماد / التحويل','الشحن','الجمارك والإفراج','الاستلام'];
+let purEditId=null,currentPurId=null,purTab='';
+function isPur(r){return !!r&&r.kind==='purchase';}
+function letterReqs(d){return (d.requests||[]).filter(r=>!isPur(r));}
+function purReqs(d){return (d.requests||[]).filter(isPur);}
+function userMods(u){u=u||currentUser;if(!u)return [];if(u.isAdmin||String(u.role||'').includes('مدير عام'))return ['l','p'];return String(u.role||'').includes('مشتريات')?['p']:['l'];}
+function hasMod(m){return userMods().includes(m);}
+function canAmount(){return !!currentUser&&(currentUser.isAdmin||String(currentUser.role||'').includes('مدير عام'));}
+function landingPage(){return hasMod('l')?'dashboard':'pur-list';}
+function pageBlocked(id){
+  const L=['dashboard','new-request','register-reply','all-requests','stats','reports'],P=['pur-dash','pur-new','pur-list'];
+  if(L.includes(id)&&!hasMod('l'))return true;
+  if(P.includes(id)&&!hasMod('p'))return true;
+  if(id==='pur-dash'&&!canAmount())return true;
+  if(id==='pur-new'&&!(can('add')||(purEditId&&can('edit'))))return true;
+  return false;
+}
+function pLate(r){const t=fuToday();return Math.max(0,r.nextDue?fuDiff(r.nextDue,t):0,r.receiptDue?fuDiff(r.receiptDue,t):0);}
+function calcPStatus(r){if((r.stage||0)>=6)return 'تم الاستلام';return pLate(r)>0?'متأخر':'قيد التنفيذ';}
+function pStageName(r){const s=r.stage||0;return s>=6?'تم الاستلام':P_STAGES[s];}
+function pBadge(r){const st=calcPStatus(r);if(st==='تم الاستلام')return '<span class="badge b-green">تم الاستلام</span>';if(st==='متأخر')return `<span class="badge b-red">متأخر +${pLate(r)}</span> <span style="font-size:10.5px;color:var(--text3);">${esc(pStageName(r))}</span>`;return `<span class="badge b-yellow">${esc(pStageName(r))}</span>`;}
+function pProg(r){const s=r.stage||0,late=calcPStatus(r)==='متأخر';let h='';for(let i=0;i<6;i++){const c=i<s?'var(--blue)':(i===s&&s<6?(late?'var(--red)':'var(--yellow)'):'var(--bg4)');h+=`<span style="display:inline-block;width:15px;height:7px;border-radius:3px;margin-left:2px;background:${c}"></span>`;}return h;}
+function purSums(list){const m={};list.forEach(r=>{const a=parseFloat(String(r.amount||'').replace(/,/g,''));if(!isNaN(a)){const c=r.currency||'—';m[c]=(m[c]||0)+a;}});return Object.entries(m).map(([c,a])=>a.toLocaleString('en-US')+' '+c).join(' · ')||'—';}
+function updatePurBadge(){const b=document.getElementById('purBadge');if(!b)return;const n=purReqs(getData()).filter(r=>calcPStatus(r)==='متأخر').length;b.style.display=n?'inline':'none';b.textContent=n;}
+function refreshPur(){try{const cur=document.querySelector('.page.active');const id=cur?cur.id.replace('page-',''):'';if(id==='pur-list')renderPurList();if(id==='pur-dash')renderPurDash();}catch(e){}updateDelayedBadge();}
+function setPurTab(v){purTab=v;renderPurList();}
+
+function renderPurList(){
+  const tb=document.getElementById('purTbl');if(!tb)return;
+  const d=getData(),all=purReqs(d).map(r=>({...r,cs:calcPStatus(r)})),open=all.filter(r=>r.cs!=='تم الاستلام');
+  const dp=document.getElementById('purFilterDept'),cur=dp.value,depts=[...new Set(all.flatMap(r=>reqDepts(r)))];
+  dp.innerHTML='<option value="">كل الإدارات</option>'+depts.map(n=>`<option value="${esc(n)}" ${n===cur?'selected':''}>${esc(n)}</option>`).join('');
+  const cnt={'':all.length,'__prog':open.length,'متأخر':all.filter(r=>r.cs==='متأخر').length,'__follow':all.filter(needsFollow).length,'تم الاستلام':all.length-open.length};
+  document.getElementById('purTabs').innerHTML=[['','الكل',''],['__prog','قيد التنفيذ (غير المستلم)',''],['متأخر','متأخر','red'],['__follow','تحتاج متابعة','red'],['تم الاستلام','تم الاستلام','']].map(([v,l,c])=>`<button type="button" class="trk-tab ${c} ${purTab===v?'on':''}" onclick="setPurTab('${v}')">${l} <b>${cnt[v]}</b></button>`).join('');
+  document.getElementById('purHint').textContent={'__follow':'طلبات موعد متابعتها اليوم أو فات، أو متأخرة ولم تُسجَّل لها متابعة منذ 3 أيام فأكثر.','متأخر':'تجاوزت موعد مرحلتها القادمة أو موعد الاستلام المتوقع — سجّل متابعة بزر الهاتف.'}[purTab]||'';
+  let rows=all;const q=(document.getElementById('purSearch').value||'').toLowerCase();
+  if(purTab==='__prog')rows=rows.filter(r=>r.cs!=='تم الاستلام');else if(purTab==='__follow')rows=rows.filter(needsFollow);else if(purTab)rows=rows.filter(r=>r.cs===purTab);
+  if(dp.value)rows=rows.filter(r=>reqDepts(r).includes(dp.value));
+  if(q)rows=rows.filter(r=>[r.num,r.subject,r.supplier,r.dept,r.handler].some(x=>String(x||'').toLowerCase().includes(q)));
+  rows=rows.slice().sort((a,b)=>(pLate(b)-pLate(a))||String(a.receiptDue||'9999').localeCompare(String(b.receiptDue||'9999')));
+  const canF=can('reply')||can('edit');
+  tb.innerHTML=`<thead><tr><th>رقم الطلب</th><th>البند</th><th>الإدارة الطالبة</th><th>المورد</th><th>المراحل</th><th>الحالة</th><th>الاستلام المتوقع</th><th>المتابعات</th><th>المسؤول</th><th>إجراء</th></tr></thead><tbody>${rows.length?rows.slice(0,300).map(r=>`<tr><td style="color:var(--blue-light);cursor:pointer;" onclick="openPurDetail(${r.id})">${esc(r.num)}${(r.attachments&&r.attachments.length)?` <i class="ti ti-paperclip" style="font-size:12px;color:var(--text3);"></i>`:''}</td><td style="cursor:pointer;" onclick="openPurDetail(${r.id})">${esc(String(r.subject||'').substring(0,32))}${String(r.subject||'').length>32?'...':''}</td><td>${esc(deptText(r,true))}</td><td>${esc(r.supplier||'—')}</td><td style="white-space:nowrap;">${pProg(r)}</td><td>${pBadge(r)}</td><td>${esc(r.receiptDue||'—')}</td><td>${fuCell(r)}</td><td style="font-size:11px;color:var(--text3);">${esc(r.handler||'—')}</td><td><div style="display:flex;gap:4px;"><button class="btn btn-secondary btn-sm" style="padding:3px 8px;" aria-label="عرض الطلب ${esc(r.num)}" onclick="openPurDetail(${r.id})"><i class="ti ti-eye" style="font-size:13px;" aria-hidden="true"></i></button>${r.cs!=='تم الاستلام'&&canF?`<button class="btn btn-warning btn-sm" style="padding:3px 8px;" title="تسجيل متابعة" aria-label="تسجيل متابعة للطلب ${esc(r.num)}" onclick="openFollow(${r.id})"><i class="ti ti-phone-call" style="font-size:13px;" aria-hidden="true"></i></button>`:''}${can('edit')?`<button class="btn btn-secondary btn-sm" style="padding:3px 8px;" aria-label="تعديل الطلب ${esc(r.num)}" onclick="purEditId=${r.id};showPage('pur-new')"><i class="ti ti-edit" style="font-size:13px;" aria-hidden="true"></i></button>`:''}</div></td></tr>`).join(''):'<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text3);">لا توجد طلبات شراء</td></tr>'}</tbody>`;
+  const ab=document.getElementById('purAddBtn');if(ab)ab.style.display=can('add')?'':'none';
+}
+
+function renderPurDash(){
+  const k=document.getElementById('purKpi');if(!k)return;
+  const d=getData(),all=purReqs(d).map(r=>({...r,cs:calcPStatus(r)})),open=all.filter(r=>r.cs!=='تم الاستلام'),late=open.filter(r=>r.cs==='متأخر');
+  const kp=(v,l,c)=>`<div class="card"><div style="font-size:11.5px;color:var(--text3);">${l}</div><div style="font-size:${String(v).length>10?15:26}px;font-weight:800;color:${c||'var(--text)'};margin-top:4px;">${v}</div></div>`;
+  k.innerHTML=kp(open.length,'طلبات مفتوحة')+kp(late.length,'متأخرة','var(--red)')+kp(open.filter(needsFollow).length,'تحتاج متابعة','var(--yellow)')+kp(all.length-open.length,'تم الاستلام','var(--green)')+kp(esc(purSums(open)),'إجمالي القيمة المفتوحة');
+  const mx=Math.max(1,...P_STAGES.map((n,i)=>open.filter(r=>(r.stage||0)===i).length));
+  document.getElementById('purStages').innerHTML=P_STAGES.map((n,i)=>{const c=open.filter(r=>(r.stage||0)===i).length;return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:12.5px;"><span style="width:150px;">${n}</span><span style="flex:1;height:12px;border-radius:6px;background:var(--bg4);"><span style="display:block;height:12px;border-radius:6px;background:var(--blue);width:${Math.round(c/mx*100)}%;"></span></span><b style="width:24px;text-align:left;">${c}</b></div>`;}).join('');
+  const dm={};open.forEach(r=>reqDepts(r).forEach(n=>dm[n]=(dm[n]||0)+1));const de=Object.entries(dm).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  document.getElementById('purDepts').innerHTML=de.length?de.map(([n,c])=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12.5px;"><span>${esc(n)}</span><b>${c}</b></div>`).join(''):'<div style="color:var(--text3);font-size:12.5px;">لا توجد طلبات مفتوحة</div>';
+  const l8=late.slice().sort((a,b)=>pLate(b)-pLate(a)).slice(0,8);
+  document.getElementById('purLateTbl').innerHTML=`<thead><tr><th>الرقم</th><th>البند</th><th>المرحلة الحالية</th><th>التأخير</th><th>المتابعة</th></tr></thead><tbody>${l8.length?l8.map(r=>`<tr onclick="openPurDetail(${r.id})" style="cursor:pointer;"><td style="color:var(--blue-light);">${esc(r.num)}</td><td>${esc(String(r.subject||'').substring(0,30))}</td><td>${esc(pStageName(r))}</td><td style="color:var(--red);font-weight:700;">+${pLate(r)} يوم</td><td>${fuCell(r)}</td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3);">لا توجد طلبات متأخرة 🎉</td></tr>'}</tbody>`;
+}
+
+function initPurForm(){
+  const d=getData(),r=purEditId?d.requests.find(x=>x.id===purEditId&&isPur(x)):null;if(purEditId&&!r)purEditId=null;
+  document.getElementById('purFormTitle').textContent=r?'تعديل طلب شراء: '+r.num:'طلب شراء خارجي جديد';
+  const v=(id,val)=>{document.getElementById(id).value=val==null?'':val;};
+  const nextNo=Math.max(0,...purReqs(d).map(x=>parseInt(String(x.num).replace(/\D/g,''))||0))+1;
+  v('p-num',r?r.num:'PR-'+String(nextNo).padStart(3,'0'));v('p-date',r?r.date:fuToday());v('p-subject',r?r.subject:'');v('p-qty',r?r.qty:'');v('p-supplier',r?r.supplier:'');v('p-origin',r?r.origin:'');v('p-po',r?r.po:'');
+  v('p-amount',r?r.amount:'');v('p-currency',r?r.currency:'');v('p-stage',r?(r.stage||0):0);v('p-nextdue',r?r.nextDue:'');v('p-receiptdue',r?r.receiptDue:'');v('p-handler',r?r.handler:'');v('p-priority',r?(r.priority||'عادي'):'عادي');v('p-details',r?r.details:'');
+  document.getElementById('p-amount-grp').style.display=canAmount()?'':'none';
+  deptInit('p',r?reqDepts(r):[]);attInit('p',r?r.attachments:[]);setRegistrar('p-registrar');
+}
+function savePur(){
+  const d=getData(),idx=purEditId?d.requests.findIndex(x=>x.id===purEditId):-1,old=idx>=0?d.requests[idx]:null;
+  if(!guard(old?'edit':'add'))return;
+  const g=id=>document.getElementById(id).value.trim();
+  const num=g('p-num'),date=g('p-date'),subject=g('p-subject'),qty=g('p-qty'),supplier=g('p-supplier'),stage=parseInt(document.getElementById('p-stage').value)||0,nextDue=g('p-nextdue'),receiptDue=g('p-receiptdue');
+  if(!num||!date||!_dp.p.length||!subject||!qty||!supplier||!receiptDue||(stage<6&&!nextDue)){toast('يرجى ملء جميع الحقول الإلزامية (واختيار إدارة واحدة على الأقل)','error');return;}
+  if(purReqs(d).some(x=>x.num===num&&(!old||x.id!==old.id))){toast('رقم الطلب موجود مسبقاً','error');return;}
+  const base={kind:'purchase',num,date,dept:_dp.p.join(' + '),depts:_dp.p.slice(),attachments:_att.p.slice(),subject,qty,supplier,origin:g('p-origin'),po:g('p-po'),stage,nextDue:stage>=6?'':nextDue,receiptDue,handler:g('p-handler'),priority:document.getElementById('p-priority').value,details:g('p-details'),amount:canAmount()?g('p-amount'):(old?old.amount||'':''),currency:canAmount()?g('p-currency'):(old?old.currency||'':'')};
+  const who=currentUser?currentUser.name:'—';
+  if(old){
+    const fromS=old.stage||0;const merged={...old,...base,editedBy:who};
+    merged.stageDates={...(old.stageDates||{})};
+    if(stage!==fromS){const t=fuToday();if(stage>fromS)for(let i=fromS;i<stage;i++)merged.stageDates[i]=merged.stageDates[i]||t;else for(let i=stage;i<fromS;i++)delete merged.stageDates[i];merged.stageLog=(old.stageLog||[]).concat({id:Date.now(),from:fromS,to:stage,date:t,note:'تعديل من نموذج الطلب',by:who,at:new Date().toISOString()});}
+    d.requests[idx]=merged;saveD(d,{type:'edit',action:'تعديل طلب شراء: '+num});toast('تم حفظ التعديلات');
+  }else{
+    const t=fuToday(),sd={};for(let i=0;i<stage;i++)sd[i]=date;
+    d.requests.unshift({id:Date.now(),...base,status:'لم يتم الرد',stageDates:sd,stageLog:[],followups:[],createdAt:new Date().toISOString(),createdBy:who,createdByRole:currentUser?currentUser.role:''});
+    saveD(d,{type:'add',action:'إضافة طلب شراء: '+num+' — '+subject});toast('تم حفظ طلب الشراء رقم '+num);
+  }
+  purEditId=null;updateDelayedBadge();showPage('pur-list');
+}
+
+function openPurDetail(id){
+  const d=getData(),r=d.requests.find(x=>x.id===id&&isPur(x));if(!r)return;currentPurId=id;
+  const st=calcPStatus(r),s=r.stage||0,late=st==='متأخر',row=(k,v)=>`<div class="detail-row"><span class="detail-key">${k}</span><span class="detail-val">${v}</span></div>`;
+  const tl=P_STAGES.map((n,i)=>{const done=i<s,cur=i===s&&s<6;const cls=done?'done':(cur?(late?'late':'cur'):'');const note=done?('اكتملت'+((r.stageDates&&r.stageDates[i])?' '+r.stageDates[i]:'')):(cur?(r.nextDue?'المتوقع '+r.nextDue+(late?' — متأخر':''):'المرحلة الحالية'):'لم تبدأ');return `<div class="ptl ${cls}"><div style="font-weight:700;font-size:13px;">${esc(n)}</div><div style="font-size:11.5px;color:var(--text3);">${esc(note)}</div></div>`;}).join('');
+  document.getElementById('purDetailTitle').textContent='طلب شراء رقم: '+r.num;
+  document.getElementById('purDetailBody').innerHTML=row('البند',esc(r.subject))+row('الكمية',esc(r.qty||'—'))+row('الإدارات الطالبة',esc(deptText(r)))+row('تاريخ الطلب',esc(r.date))+row('المورد',esc(r.supplier||'—')+(r.origin?' — '+esc(r.origin):''))+(r.po?row('أمر الشراء / العقد',esc(r.po)):'')+(canAmount()&&r.amount?row('المبلغ',esc(r.amount)+' '+esc(r.currency||'')):'')+row('الحالة',pBadge(r))+row('الأولوية',getPriorityBadge(r.priority))+row('الاستلام المتوقع',esc(r.receiptDue||'—'))+(r.handler?row('المسؤول',esc(r.handler)):'')+(r.details?row('ملاحظات',esc(r.details)):'')
+   +`<div style="margin:12px 0 6px;font-weight:700;font-size:13px;"><i class="ti ti-route"></i> مراحل الطلب</div>${tl}`
+   +fuDetailBlock(r,st==='تم الاستلام'?'تم الرد':st)
+   +((r.attachments&&r.attachments.length)?`<div class="detail-row"><span class="detail-key"><i class="ti ti-paperclip" style="font-size:12px;"></i> المرفقات</span><span class="detail-val"><div class="att-grid">${r.attachments.map((a,i)=>`<div class="att-item" title="${esc(a.type==='link'?(a.url||a.name):a.name)}" onclick="attViewById(${r.id},${i})">${attThumb(a)}</div>`).join('')}</div></span></div>`:'')
+   +row('المسجِّل (مثبّت)',esc(r.createdBy||'—')+(r.createdByRole?' — '+esc(r.createdByRole):'')+(r.createdAt?'<br><span style="font-size:11px;color:var(--text3);">'+esc(new Date(r.createdAt).toLocaleString('ar-EG'))+'</span>':''));
+  const done=st==='تم الاستلام',canU=can('edit')||can('reply');
+  document.getElementById('pdStageBtn').style.display=(!done&&canU)?'inline-flex':'none';
+  document.getElementById('pdFollowBtn').style.display=(!done&&canU)?'inline-flex':'none';
+  document.getElementById('pdEditBtn').style.display=can('edit')?'inline-flex':'none';
+  document.getElementById('pdDelBtn').style.display=can('delete')?'inline-flex':'none';
+  openModal('purDetailModal');
+}
+function openPurStage(id){
+  if(!(can('edit')||can('reply'))){toast('ليس لديك صلاحية لتحديث المراحل','error');return;}
+  const r=getData().requests.find(x=>x.id===id&&isPur(x));if(!r)return;currentPurId=id;const cur=r.stage||0;
+  document.getElementById('purStageInfo').innerHTML=`<b>${esc(r.num)}</b> — ${esc(r.subject)}<br>المرحلة الحالية: <b>${esc(pStageName(r))}</b>`;
+  document.getElementById('ps-stage').innerHTML=P_STAGES.concat(['تم الاستلام (إغلاق الطلب)']).map((n,i)=>`<option value="${i}" ${i===Math.min(cur+1,6)?'selected':''}>${esc(n)}</option>`).join('');
+  document.getElementById('ps-date').value=fuToday();document.getElementById('ps-next').value='';document.getElementById('ps-note').value='';psToggle();openModal('purStageModal');
+}
+function psToggle(){document.getElementById('ps-next-grp').style.display=document.getElementById('ps-stage').value==='6'?'none':'block';}
+function savePurStage(){
+  const d=getData(),r=d.requests.find(x=>x.id===currentPurId);if(!r)return;
+  if(!(can('edit')||can('reply'))){toast('ليس لديك صلاحية','error');return;}
+  const to=parseInt(document.getElementById('ps-stage').value),from=r.stage||0,date=document.getElementById('ps-date').value,next=document.getElementById('ps-next').value,note=document.getElementById('ps-note').value.trim();
+  if(!date){toast('حدد تاريخ إتمام المرحلة السابقة','error');return;}
+  if(to<6&&!next){toast('حدد موعد المرحلة القادمة','error');return;}
+  r.stageDates=r.stageDates||{};
+  if(to>from)for(let i=from;i<to;i++)r.stageDates[i]=date;else if(to<from)for(let i=to;i<from;i++)delete r.stageDates[i];
+  r.stage=to;r.nextDue=to>=6?'':next;
+  r.stageLog=(r.stageLog||[]).concat({id:Date.now(),from,to,date,note,by:currentUser?currentUser.name:'',at:new Date().toISOString()});
+  saveD(d,{type:'edit',action:'تحديث مرحلة طلب شراء: '+r.num+' ← '+(to>=6?'تم الاستلام':P_STAGES[to])});
+  closeModal('purStageModal');toast('تم تحديث المرحلة');refreshPur();
+}
+function deletePur(id){
+  if(!guard('delete'))return;const d=getData(),r=d.requests.find(x=>x.id===id&&isPur(x));if(!r)return;
+  askPassword('حذف طلب شراء',`أدخل كلمة مرورك لحذف طلب الشراء رقم "${r.num}".`,()=>{const d2=getData();d2.requests=d2.requests.filter(x=>x.id!==id);saveD(d2,{type:'delete',action:'حذف طلب شراء: '+r.num});toast('تم حذف طلب الشراء');closeModal('purDetailModal');refreshPur();});
+}
+function exportPurCSV(){
+  if(!guard('export'))return;const d=getData(),list=purReqs(d);if(!list.length){toast('لا توجد بيانات للتصدير','error');return;}
+  const amt=canAmount();
+  const headers=['رقم الطلب','البند','الكمية','الإدارة الطالبة','المورد','بلد المنشأ','أمر الشراء']
+    .concat(amt?['المبلغ','العملة']:[]).concat(['المرحلة الحالية','الحالة','أيام التأخير','تاريخ الطلب','موعد المرحلة القادمة','موعد الاستلام المتوقع','عدد المتابعات','تاريخ آخر متابعة','المسؤول','المسجِّل']);
+  const rows=list.map(r=>[r.num,r.subject,r.qty||'',r.dept,r.supplier||'',r.origin||'',r.po||''].concat(amt?[r.amount||'',r.currency||'']:[]).concat([pStageName(r),calcPStatus(r),pLate(r)||'',r.date,r.nextDue||'',r.receiptDue||'',reqFollowups(r).length,(lastFollow(r)||{}).date||'',r.handler||'',r.createdBy||'']).map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+  const csv='\uFEFF'+headers.join(',')+'\n'+rows.join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download='طلبات_الشراء_'+new Date().toISOString().split('T')[0]+'.csv';a.click();toast('تم تصدير طلبات الشراء');
+}
+function exportPurFollow(){if(!guard('export'))return;exportFollowLog(true);}
 
 // ── DASHBOARD ──
 function renderDashboard(){
-  const d=getData(),reqs=d.requests.map(r=>({...r,computedStatus:calcStatus(r)}));
+  const d=getData(),reqs=letterReqs(d).map(r=>({...r,computedStatus:calcStatus(r)}));
   const total=reqs.length,replied=reqs.filter(r=>r.computedStatus==='تم الرد').length,ongoing=reqs.filter(r=>r.computedStatus==='جاري التنفيذ').length,delayed=reqs.filter(r=>r.computedStatus==='متأخر').length,noReply=reqs.filter(r=>r.computedStatus==='لم يتم الرد').length,pct=total?Math.round(replied/total*100):0;
   const s=getSettings(),target=s.target||70;
   document.getElementById('kpiGrid').innerHTML=[['ti-mail','rgba(var(--blue-rgb),0.15)','var(--blue-light)',total,'إجمالي الطلبات',''],['ti-circle-check','rgba(34,197,94,0.15)','var(--green)',replied,'تم الرد',pct+'%'],['ti-loader','rgba(245,158,11,0.15)','var(--yellow)',ongoing,'جاري التنفيذ',''],['ti-alert-circle','rgba(239,68,68,0.15)','var(--red)',delayed,'متأخر',''],['ti-clock','rgba(71,85,105,0.3)','var(--text2)',noReply,'لم يتم الرد',''],['ti-target',pct>=target?'rgba(34,197,94,0.15)':'rgba(245,158,11,0.15)',pct>=target?'var(--green)':'var(--yellow)',pct+'%','نسبة الإنجاز',target+'% هدف']].map(([ico,bg,color,val,lbl,sub])=>`<div class="kpi-card"><div class="kpi-icon" style="background:${bg};color:${color};"><i class="ti ${ico}"></i></div><div><div class="kpi-val" style="color:${color};">${val}</div><div class="kpi-lbl">${lbl}</div>${sub?`<div class="kpi-sub" style="color:${color};">${sub}</div>`:''}</div></div>`).join('');
@@ -1557,7 +1777,7 @@ function renderDashboard(){
 
 // ── STATS ──
 function renderStats(){
-  const d=getData(),reqs=d.requests.map(r=>({...r,computedStatus:calcStatus(r)}));
+  const d=getData(),reqs=letterReqs(d).map(r=>({...r,computedStatus:calcStatus(r)}));
   const total=reqs.length,replied=reqs.filter(r=>r.computedStatus==='تم الرد').length,ongoing=reqs.filter(r=>r.computedStatus==='جاري التنفيذ').length,delayed=reqs.filter(r=>r.computedStatus==='متأخر').length,noReply=reqs.filter(r=>r.computedStatus==='لم يتم الرد').length;
   document.getElementById('st-pct').textContent=total?Math.round(replied/total*100)+'%':'0%';
   const ra=reqs.filter(r=>r.computedStatus==='تم الرد'&&r.replyDate),avg=ra.length?Math.round(ra.reduce((s,r)=>s+Math.floor((new Date(r.replyDate)-new Date(r.date))/86400000),0)/ra.length):0;
@@ -1572,138 +1792,22 @@ function renderStats(){
 }
 
 // ── SETTINGS PAGE ──
-function loadSettings(){renderDeptSettings();renderAreas();renderThemeSettings();renderWmSettings();const s=getSettings(),cu=currentUser||{};document.getElementById('s-name').value=cu.name||s.name||'';document.getElementById('s-role').value=cu.role||s.role||'';document.getElementById('s-company').value=s.company||'';document.getElementById('s-days').value=s.days||7;document.getElementById('s-target').value=s.target||70;document.getElementById('s-session').value=s.session||30;const d=getData();document.getElementById('s-datainfo').textContent=`إجمالي الطلبات المحفوظة: ${d.requests.length} طلب`;lockSettingsUI();cloudRenderUI();renderUsersList();}
+function loadSettings(){renderDeptSettings();renderThemeSettings();renderWmSettings();const s=getSettings(),cu=currentUser||{};document.getElementById('s-name').value=cu.name||s.name||'';document.getElementById('s-role').value=cu.role||s.role||'';document.getElementById('s-company').value=s.company||'';document.getElementById('s-days').value=s.days||7;document.getElementById('s-target').value=s.target||70;document.getElementById('s-session').value=s.session||30;const d=getData();document.getElementById('s-datainfo').textContent=`إجمالي الطلبات المحفوظة: ${letterReqs(d).length} كتاب دوري${hasMod('p')?' — '+purReqs(d).length+' طلب شراء':''}`;lockSettingsUI();cloudRenderUI();renderUsersList();}
 function saveSettings(){if(SERVER)return saveSettingsServer();
   const d=getData(),newPwd=document.getElementById('s-pwd').value.trim();
-  d.settings={departments:(d.settings||{}).departments,areas:(d.settings||{}).areas,name:document.getElementById('s-name').value,role:document.getElementById('s-role').value,company:document.getElementById('s-company').value,days:parseInt(document.getElementById('s-days').value)||7,target:parseInt(document.getElementById('s-target').value)||70,session:parseInt(document.getElementById('s-session').value)||30};
+  d.settings={departments:(d.settings||{}).departments,name:document.getElementById('s-name').value,role:document.getElementById('s-role').value,company:document.getElementById('s-company').value,days:parseInt(document.getElementById('s-days').value)||7,target:parseInt(document.getElementById('s-target').value)||70,session:parseInt(document.getElementById('s-session').value)||30};
   sessionTimeout=d.settings.session;
   if(currentUser){const users=getUsers(),idx=users.findIndex(u=>u.id===currentUser.id);if(idx!==-1){users[idx].name=d.settings.name;users[idx].role=d.settings.role;if(newPwd)users[idx].pwd=newPwd;currentUser=users[idx];d.users=users;document.getElementById('headerName').textContent=esc(d.settings.name);document.getElementById('headerRole').textContent=esc(d.settings.role);document.getElementById('headerAvatar').textContent=d.settings.name.charAt(0);}populateLoginUsers();renderUsersList();}
   saveD(d,{type:'settings',action:'تعديل إعدادات النظام'});document.getElementById('s-pwd').value='';updateCompanyName();toast(newPwd?'تم حفظ الإعدادات وتغيير كلمة المرور':'تم حفظ الإعدادات');
 }
 
 // ── EXPORT / IMPORT ──
-function exportReport(type){if(!guard('export'))return;const d=getData();let reqs=d.requests.map(r=>({...r,computedStatus:calcStatus(r)}));if(type==='delayed')reqs=reqs.filter(r=>r.computedStatus==='متأخر');else if(type==='pending')reqs=reqs.filter(r=>['جاري التنفيذ','لم يتم الرد'].includes(r.computedStatus));else if(type==='unreplied')reqs=reqs.filter(r=>r.computedStatus!=='تم الرد');else if(type==='replied')reqs=reqs.filter(r=>r.computedStatus==='تم الرد');if(type==='followlog')return exportFollowLog();if(!reqs.length){toast('لا توجد بيانات للتصدير','error');return;}const headers=['رقم الطلب','الموضوع','الإدارة','تاريخ الورود','الأولوية','الحالة','تاريخ الرد','نص الرد','المسؤول','المسجِّل','وقت التسجيل','سجّل الرد','أيام التأخير','عدد المتابعات','تاريخ آخر متابعة','نتيجة آخر متابعة','موعد المتابعة القادمة'];const rows=reqs.map(r=>[r.num,r.subject,r.dept,r.date,r.priority||'عادي',r.computedStatus,r.replyDate||'',r.reply||'',r.handler||'',r.createdBy||'',r.createdAt?new Date(r.createdAt).toLocaleString('ar-EG'):'',r.replyBy||'',r.computedStatus==='متأخر'?lateDays(r):'',reqFollowups(r).length,(lastFollow(r)||{}).date||'',(lastFollow(r)||{}).result||'',(lastFollow(r)||{}).nextDate||''].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));const csv='\uFEFF'+headers.join(',')+'\n'+rows.join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download='تقرير_الطلبات_'+new Date().toISOString().split('T')[0]+'.csv';a.click();toast('تم تصدير التقرير بنجاح');}
-function exportJSON(){if(!guard('export'))return;const d=getData(),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}));a.download='بيانات_النظام_'+new Date().toISOString().split('T')[0]+'.json';a.click();toast('تم تصدير البيانات');}
+function exportReport(type){if(!guard('export'))return;const d=getData();let reqs=letterReqs(d).map(r=>({...r,computedStatus:calcStatus(r)}));if(type==='delayed')reqs=reqs.filter(r=>r.computedStatus==='متأخر');else if(type==='pending')reqs=reqs.filter(r=>['جاري التنفيذ','لم يتم الرد'].includes(r.computedStatus));else if(type==='unreplied')reqs=reqs.filter(r=>r.computedStatus!=='تم الرد');else if(type==='replied')reqs=reqs.filter(r=>r.computedStatus==='تم الرد');if(type==='followlog')return exportFollowLog();if(!reqs.length){toast('لا توجد بيانات للتصدير','error');return;}const headers=['رقم الطلب','الموضوع','الإدارة','تاريخ الورود','الأولوية','الحالة','تاريخ الرد','نص الرد','المسؤول','المسجِّل','وقت التسجيل','سجّل الرد','أيام التأخير','عدد المتابعات','تاريخ آخر متابعة','نتيجة آخر متابعة','موعد المتابعة القادمة'];const rows=reqs.map(r=>[r.num,r.subject,r.dept,r.date,r.priority||'عادي',r.computedStatus,r.replyDate||'',r.reply||'',r.handler||'',r.createdBy||'',r.createdAt?new Date(r.createdAt).toLocaleString('ar-EG'):'',r.replyBy||'',r.computedStatus==='متأخر'?lateDays(r):'',reqFollowups(r).length,(lastFollow(r)||{}).date||'',(lastFollow(r)||{}).result||'',(lastFollow(r)||{}).nextDate||''].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));const csv='\uFEFF'+headers.join(',')+'\n'+rows.join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download='تقرير_الطلبات_'+new Date().toISOString().split('T')[0]+'.csv';a.click();toast('تم تصدير التقرير بنجاح');}
+function exportJSON(){if(!guard('export'))return;if(!(hasMod('l')&&hasMod('p'))){toast('النسخ الاحتياطي الكامل متاح لمن يملك صلاحية القسمين فقط','error');return;}const d=getData(),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}));a.download='بيانات_النظام_'+new Date().toISOString().split('T')[0]+'.json';a.click();toast('تم تصدير البيانات');}
 function importJSON(input){if(!guardAdmin())return;const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{const p=JSON.parse(e.target.result);if(!p.requests)throw new Error();const d=getData();let merged;if(SERVER){const nums=new Set(d.requests.map(r=>r.num));merged={...d,requests:[...p.requests.filter(r=>!nums.has(r.num)).map(r=>({...r,id:r.id||Date.now()+Math.random()})),...d.requests]};_importing=true;}else{merged={...p,users:d.users.length?d.users:p.users||[]};}setData(merged);toast('تم استيراد البيانات: '+p.requests.length+' طلب');renderDashboard();updateDelayedBadge();}catch(err){toast('ملف غير صالح','error');}};r.readAsText(f);input.value='';}
-function printTable(){if(!guard('export'))return;const d=getData(),reqs=d.requests.map(r=>({...r,computedStatus:calcStatus(r)})),s=getSettings(),win=window.open('','_blank');win.document.write(`<html dir="rtl"><head><meta charset="UTF-8"><title>تقرير الطلبات</title><style>body{font-family:Tajawal,Arial,sans-serif;direction:rtl;padding:20px;}h2{margin-bottom:10px;}table{width:100%;border-collapse:collapse;font-size:12px;}th{background:#ddd;padding:6px;border:1px solid #ccc;text-align:right;}td{padding:5px;border:1px solid #eee;}@media print{button{display:none;}}</style></head><body>${wmLoad().on?`<img src="${WM_DATA}" alt="" style="position:fixed;top:50%;left:50%;width:62%;transform:translate(-50%,-50%);opacity:.09;z-index:-1;filter:grayscale(1);">`:''}<h2>${esc(s.company)} — تقرير متابعة الكتب الدورية</h2><p>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-EG')}</p><table><thead><tr><th>رقم الطلب</th><th>الموضوع</th><th>الإدارة</th><th>تاريخ الورود</th><th>الحالة</th><th>المتابعات</th><th>تاريخ الرد</th><th>المسؤول</th><th>المسجِّل</th></tr></thead><tbody>${reqs.map(r=>`<tr><td>${esc(r.num)}</td><td>${esc(r.subject)}</td><td>${esc(r.dept)}</td><td>${esc(r.date)}</td><td>${esc(r.computedStatus)}${r.computedStatus==='متأخر'?' (+'+lateDays(r)+' يوم)':''}</td><td>${reqFollowups(r).length?reqFollowups(r).length+' — آخرها '+esc((lastFollow(r)||{}).date||''):'—'}</td><td>${esc(r.replyDate||'—')}</td><td>${esc(r.handler||'—')}</td><td>${esc(r.createdBy||'—')}</td></tr>`).join('')}</tbody></table><script>window.print();<\/script></body></html>`);win.document.close();}
+function printTable(){if(!guard('export'))return;const d=getData(),reqs=letterReqs(d).map(r=>({...r,computedStatus:calcStatus(r)})),s=getSettings(),win=window.open('','_blank');win.document.write(`<html dir="rtl"><head><meta charset="UTF-8"><title>تقرير الطلبات</title><style>body{font-family:Tajawal,Arial,sans-serif;direction:rtl;padding:20px;}h2{margin-bottom:10px;}table{width:100%;border-collapse:collapse;font-size:12px;}th{background:#ddd;padding:6px;border:1px solid #ccc;text-align:right;}td{padding:5px;border:1px solid #eee;}@media print{button{display:none;}}</style></head><body>${wmLoad().on?`<img src="${WM_DATA}" alt="" style="position:fixed;top:50%;left:50%;width:62%;transform:translate(-50%,-50%);opacity:.09;z-index:-1;filter:grayscale(1);">`:''}<h2>${esc(s.company)} — تقرير متابعة الكتب الدورية</h2><p>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-EG')}</p><table><thead><tr><th>رقم الطلب</th><th>الموضوع</th><th>الإدارة</th><th>تاريخ الورود</th><th>الحالة</th><th>المتابعات</th><th>تاريخ الرد</th><th>المسؤول</th><th>المسجِّل</th></tr></thead><tbody>${reqs.map(r=>`<tr><td>${esc(r.num)}</td><td>${esc(r.subject)}</td><td>${esc(r.dept)}</td><td>${esc(r.date)}</td><td>${esc(r.computedStatus)}${r.computedStatus==='متأخر'?' (+'+lateDays(r)+' يوم)':''}</td><td>${reqFollowups(r).length?reqFollowups(r).length+' — آخرها '+esc((lastFollow(r)||{}).date||''):'—'}</td><td>${esc(r.replyDate||'—')}</td><td>${esc(r.handler||'—')}</td><td>${esc(r.createdBy||'—')}</td></tr>`).join('')}</tbody></table><script>window.print();<\/script></body></html>`);win.document.close();}
 function clearData(){if(!guardAdmin())return;if(SERVER){return askPassword('حذف جميع الطلبات','سيتم حذف جميع الطلبات نهائياً. أدخل كلمة المرور للتأكيد.',()=>{const d=getData();d.requests=[];saveD(d,{type:'delete',action:'حذف جميع الطلبات'});toast('تم حذف جميع الطلبات');renderDashboard();updateDelayedBadge();});}askPassword('حذف جميع البيانات','تحذير: هذه العملية ستحذف جميع البيانات نهائياً. أدخل كلمة المرور للتأكيد.',()=>{const d=getData(),pwd=currentUser?currentUser.pwd:'1234',s=d.settings||{},users=d.users||[];localStorage.removeItem(STORE_KEY);_cache=null;const fresh=getData();fresh.settings={...s};fresh.users=users;setData(fresh);toast('تم حذف جميع البيانات');renderDashboard();updateDelayedBadge();});}
 
-
-// ── المشتريات الخارجية (قسم مستقل) ──
-const PR_STAGES=['إنشاء طلب الشراء','المواصفات الفنية','الاعتماد المالي','الاستعلام وطرح المناقصة','تقييم العروض','الترسية','التعاقد / أمر الشراء','فتح الاعتماد / التمويل','التصنيع والفحص قبل الشحن','الشحن الدولي','التخليص الجمركي','الاستلام بالمخازن','السداد والإغلاق المالي','إغلاق الملف وتقييم المورد'];
-const PR_FIELDS=[['num','رقم طلب الشراء *'],['item','الصنف / الوصف *'],['dept','الجهة الطالبة'],['qty','الكمية','number'],['unit','الوحدة'],['est','القيمة التقديرية','number'],['cur','العملة'],['needDate','تاريخ الاحتياج المطلوب','date'],['supplier','المورد'],['country','بلد المورد'],['poNo','رقم أمر الشراء'],['val','قيمة التعاقد','number'],['inco','Incoterms'],['pay','شروط الدفع'],['lcNo','رقم الاعتماد / التحويل'],['lcExp','تاريخ انتهاء الاعتماد','date'],['bl','رقم بوليصة الشحن'],['eta','موعد الوصول المتوقع','date'],['acid','رقم ACID'],['recv','الكمية المستلمة','number']];
-let _prId=null;
-function userArea(u){u=u||currentUser;if(!u)return'';if(u.isAdmin)return'all';return((getData().settings||{}).areas||{})[u.id]==='purch'?'purch':'corr';}
-function canPurch(){const a=userArea();return a==='all'||a==='purch';}
-function prGate(id){const a=userArea();if(a==='purch'&&id!=='purchases'&&id!=='settings')return'purchases';if(a==='corr'&&id==='purchases'){toast('ليس لديك صلاحية لهذه الصفحة','error');return'';}return id;}
-function prNav(){const a=userArea(),n=document.getElementById('navPurch');if(canPurch())pcStart();else pcStop();if(n)n.style.display=canPurch()?'':'none';
-  const q=p=>document.querySelector('.nav-item[onclick*="\''+p+'\'"]');
-  ['dashboard','all-requests','stats'].forEach(p=>{const e=q(p);if(e)e.style.display=a==='purch'?'none':'';});
-  if(a==='purch')['new-request','register-reply','reports','audit-log'].forEach(p=>{const e=q(p);if(e)e.style.display='none';});
-  document.querySelectorAll('.nav-section').forEach(s=>{const it=[...s.querySelectorAll('.nav-item')];if(it.length)s.style.display=it.some(x=>x.style.display!=='none')?'':'none';});}
-let PS=null;
-function pStore(){if(!PS){try{PS=JSON.parse(localStorage.getItem('corresp_purch_v1')||'null');}catch(e){}if(!PS||!Array.isArray(PS.items))PS={items:[],tomb:{}};}return PS;}
-function pList(){return pStore().items;}
-function pPersist(){try{localStorage.setItem('corresp_purch_v1',JSON.stringify(pStore()));}catch(e){toast('مساحة التخزين ممتلئة','error');}if(PC.on&&!_pApplying)pcSchedule();}
-function pSave(arr){pStore().items=arr;pPersist();}
-function exportPurch(){if(!canPurch())return;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(pList(),null,2)],{type:'application/json'}));a.download='المشتريات_'+new Date().toISOString().slice(0,10)+'.json';a.click();}
-// غرفة Firebase مستقلة للمشتريات (مفتاح تشفير مختلف عن غرفة الكتب — لا يُحفظ إلا على أجهزة المدير وموظف المشتريات)
-const PC={on:false,url:'',room:'',pwd:'',key:null,busy:false,again:false,timer:null,poll:null,meta:''};let _pApplying=false;
-async function pcKey(){if(PC.key)return PC.key;const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(PC.pwd),'PBKDF2',false,['deriveKey']);PC.key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:new TextEncoder().encode('purch:'+PC.room),iterations:150000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);return PC.key;}
-async function pcEnc(o){const iv=crypto.getRandomValues(new Uint8Array(12));const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},await pcKey(),new TextEncoder().encode(JSON.stringify(o)));return{iv:b64(iv),ct:b64(ct)};}
-async function pcDec(p){const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:ub64(p.iv)},await pcKey(),ub64(p.ct));return JSON.parse(new TextDecoder().decode(pt));}
-async function pcFb(path,method,body){const r=await fetch(PC.url+'/'+path+'.json',{method:method||'GET',body:body===undefined?undefined:JSON.stringify(body)});if(!r.ok){const e=new Error('HTTP '+r.status);e.status=r.status;throw e;}return r.json();}
-function pcStatus(m,err){const e=document.getElementById('pr-status');if(e){e.textContent=m;e.style.color=err?'var(--red)':'var(--text3)';}}
-function pcSchedule(){clearTimeout(PC.timer);PC.timer=setTimeout(pcSync,700);}
-async function pcSync(){
-  if(!PC.on)return;if(PC.busy){PC.again=true;return;}PC.busy=true;
-  try{
-    const R='rooms/'+PC.room,tree=(await pcFb(R))||{},rp=tree.p||{},rt=tree.t||{},s=pStore();let ch=false;
-    for(const k of Object.keys(rt)){if((s.tomb[k]||0)<rt[k]){s.tomb[k]=rt[k];ch=true;}const i=s.items.findIndex(x=>String(x.id)===k);if(i>=0&&(s.items[i]._u||0)<rt[k]){s.items.splice(i,1);ch=true;}}
-    for(const k of Object.keys(rp)){const ru=rp[k].u||0;if((rt[k]||0)>ru)continue;const i=s.items.findIndex(x=>String(x.id)===k);if(i<0||ru>(s.items[i]._u||0)){try{const o=await pcDec(rp[k]);o._u=ru;if(i>=0)s.items[i]=o;else s.items.push(o);ch=true;}catch(e){}}}
-    if(ch){_pApplying=true;pPersist();_pApplying=false;}
-    const tasks=[];
-    s.items.forEach(x=>{const ru=(rp[x.id]&&rp[x.id].u)||0;if((x._u||0)>ru&&!((rt[x.id]||0)>(x._u||0)))tasks.push(async()=>{const e=await pcEnc(x);await pcFb(R+'/p/'+x.id,'PUT',{iv:e.iv,ct:e.ct,u:x._u||0});});});
-    Object.keys(s.tomb).forEach(k=>{if((rt[k]||0)<s.tomb[k])tasks.push(async()=>{await pcFb(R+'/t/'+k,'PUT',s.tomb[k]);await pcFb(R+'/p/'+k,'DELETE');});});
-    await par(tasks,8);
-    if(tasks.length){const m=Date.now()+'-'+Math.random().toString(36).slice(2,6);await pcFb(R+'/meta','PUT',m);PC.meta=m;}else PC.meta=tree.meta||'';
-    pcStatus('آخر مزامنة: '+fmtTime(new Date()));
-    if(ch){const pg=document.getElementById('page-purchases');if(pg&&pg.classList.contains('active'))renderPurch();}
-  }catch(e){pcStatus(e.status===401||e.status===403?'مرفوض: راجع قواعد Firebase':'تعذر الاتصال — ستُعاد المحاولة',true);}
-  finally{PC.busy=false;if(PC.again){PC.again=false;pcSchedule();}}
-}
-function pcStart(){if(PC.on)return;try{const c=JSON.parse(localStorage.getItem('corresp_pcfg')||'null');if(c&&c.url&&c.room&&c.pwd){Object.assign(PC,{on:true,url:c.url,room:c.room,pwd:c.pwd,key:null});PC.poll=setInterval(async()=>{if(!PC.on||PC.busy)return;try{const m=await pcFb('rooms/'+PC.room+'/meta');if(m!==PC.meta)pcSync();}catch(e){pcStatus('تعذر الاتصال',true);}},5000);pcSchedule();}}catch(e){}}
-function pcStop(){clearInterval(PC.poll);PC.poll=null;Object.assign(PC,{on:false,key:null});}
-async function pcEnable(url,room,pwd){
-  url=String(url).trim().replace(/\/+$/,'');room=String(room).trim();pwd=String(pwd);
-  if(!/^https:\/\/[^\s\/]+$/.test(url))throw new Error('رابط قاعدة البيانات غير صحيح');
-  if(!/^[A-Za-z0-9_-]{3,40}$/.test(room))throw new Error('اسم الغرفة: حروف إنجليزية وأرقام و - _');
-  if(pwd.length<8)throw new Error('كلمة السر 8 أحرف على الأقل');
-  if(CLOUD.on&&(room===CLOUD.room||pwd===CLOUD.pwd))throw new Error('غرفة المشتريات وكلمة سرها لازم يختلفوا عن غرفة الكتب');
-  if(!(window.crypto&&crypto.subtle))throw new Error('المتصفح لا يدعم التشفير — استخدم https');
-  pcStop();Object.assign(PC,{url,room,pwd,key:null});
-  try{const chk=await pcFb('rooms/'+room+'/chk');if(chk){try{const o=await pcDec(chk);if(o.ok!==1)throw 0;}catch(e){throw new Error('كلمة السر غير صحيحة لهذه الغرفة');}}else await pcFb('rooms/'+room+'/chk','PUT',await pcEnc({ok:1}));}
-  catch(e){PC.key=null;if(e.status===401||e.status===403)throw new Error('مرفوض: راجع قواعد قاعدة البيانات');if(e.status!==undefined||/Failed to fetch|NetworkError/.test(e.message))throw new Error('تعذر الاتصال برابط قاعدة البيانات');throw e;}
-  localStorage.setItem('corresp_pcfg',JSON.stringify({url,room,pwd}));pcStart();await pcSync();prSyncUI();
-}
-function pcCode(){return 'PT1.'+btoa(unescape(encodeURIComponent(JSON.stringify({u:PC.url,r:PC.room,k:PC.pwd}))));}
-function pcParse(c){try{c=String(c).trim();if(c.slice(0,4)!=='PT1.')throw 0;const o=JSON.parse(decodeURIComponent(escape(atob(c.slice(4)))));if(!o.u||!o.r||!o.k)throw 0;return o;}catch(e){throw new Error('رمز الربط غير صحيح (يبدأ بـ PT1.)');}}
-function pcGen(){const r=n=>Array.from(crypto.getRandomValues(new Uint8Array(n))).map(x=>'abcdefghjkmnpqrstuvwxyz23456789'[x%31]).join('');document.getElementById('pc-pwd').value=r(14);if(!document.getElementById('pc-room').value)document.getElementById('pc-room').value='purch-'+r(8);}
-async function pcActivate(){try{await pcEnable(document.getElementById('pc-url').value,document.getElementById('pc-room').value,document.getElementById('pc-pwd').value);toast('تم تفعيل مزامنة المشتريات');}catch(e){toast(e.message,'error');}}
-async function pcLink(){try{const o=pcParse(document.getElementById('pc-link').value);await pcEnable(o.u,o.r,o.k);toast('تم ربط الجهاز');}catch(e){toast(e.message,'error');}}
-function pcCopy(){const i=document.getElementById('pc-code');i.select();try{navigator.clipboard.writeText(i.value);}catch(e){document.execCommand('copy');}toast('تم نسخ الرمز');}
-function pcDisable(){if(!confirm('إيقاف الربط على هذا الجهاز؟ البيانات تبقى عليه ولن تتزامن.'))return;pcStop();localStorage.removeItem('corresp_pcfg');prSyncUI();toast('تم إيقاف الربط');}
-function prSyncUI(){
-  const c=document.getElementById('pr-sync');if(!c)return;
-  if(PC.on){c.innerHTML=`<div style="font-size:13px;margin-bottom:6px"><span style="color:var(--green)">●</span> مزامنة المشتريات مفعّلة — غرفة منفصلة: <b dir="ltr">${esc(PC.room)}</b> <span id="pr-status" style="font-size:11.5px;color:var(--text3);margin-right:8px"></span></div><div style="font-size:11.5px;color:var(--text3);margin-bottom:6px">رمز الربط لجهاز موظف المشتريات فقط — لا تعطيه لموظفي الكتب:</div><div style="display:flex;gap:8px"><input class="form-input" id="pc-code" dir="ltr" readonly style="flex:1" value="${esc(pcCode())}"><button class="btn btn-secondary btn-sm" onclick="pcCopy()">نسخ</button><button class="btn btn-danger btn-sm" onclick="pcDisable()">إيقاف</button></div>`;return;}
-  c.innerHTML=`<div style="font-size:12.5px;color:var(--yellow);margin-bottom:10px">غير مرتبط بالسحابة: بيانات المشتريات على هذا الجهاز فقط. المدير يفعّل غرفة مشتريات منفصلة ثم ينسخ الرمز لجهاز موظف المشتريات.</div><div class="form-grid"><div class="form-group full"><label class="form-label">رابط قاعدة البيانات</label><input class="form-input" id="pc-url" dir="ltr" value="${esc(CLOUD.url||'')}" placeholder="https://xxxx-default-rtdb.firebaseio.com"></div><div class="form-group"><label class="form-label">اسم غرفة المشتريات</label><input class="form-input" id="pc-room" dir="ltr" placeholder="purch-xxxxxxxx"></div><div class="form-group"><label class="form-label">كلمة سر الغرفة (غير كلمة سر الكتب)</label><div style="display:flex;gap:8px"><input class="form-input" id="pc-pwd" dir="ltr" style="flex:1"><button class="btn btn-secondary btn-sm" onclick="pcGen()">توليد</button></div></div></div><button class="btn btn-primary btn-sm" onclick="pcActivate()" style="margin-top:8px"><i class="ti ti-cloud-upload"></i> تفعيل</button><div style="margin-top:12px;font-size:12px;color:var(--text3)">أو الصق رمز الربط:</div><div style="display:flex;gap:8px;margin-top:4px"><input class="form-input" id="pc-link" dir="ltr" style="flex:1" placeholder="PT1...."><button class="btn btn-secondary btn-sm" onclick="pcLink()">ربط</button></div>`;
-}
-function pDone(r){return PR_STAGES.filter((_,i)=>r.st&&r.st[i]&&r.st[i].d).length;}
-function pCur(r){const i=PR_STAGES.findIndex((_,k)=>!(r.st&&r.st[k]&&r.st[k].d));return i<0?'مكتمل':(i+1)+'. '+PR_STAGES[i];}
-function pStatus(r){if(pDone(r)===PR_STAGES.length)return'مكتمل';if(r.needDate&&r.needDate<new Date().toISOString().slice(0,10))return'متأخر';return'جاري';}
-function renderPurch(){
-  if(!canPurch())return;
-  prSyncUI();
-  const all=pList(),q=(document.getElementById('pr-q').value||'').toLowerCase(),fs=document.getElementById('pr-fs').value,cn=x=>all.filter(r=>pStatus(r)===x).length;
-  document.getElementById('pr-kpi').innerHTML=[['الإجمالي',all.length,'--blue-light'],['جاري',cn('جاري'),'--yellow'],['متأخر',cn('متأخر'),'--red'],['مكتمل',cn('مكتمل'),'--green']].map(k=>`<div class="kpi-card"><div><div class="kpi-val" style="color:var(${k[2]})">${k[1]}</div><div class="kpi-lbl">${k[0]}</div></div></div>`).join('');
-  const rows=all.filter(r=>(!q||[r.num,r.item,r.supplier,r.dept].join(' ').toLowerCase().includes(q))&&(!fs||pStatus(r)===fs));
-  const bd={'جاري':'b-yellow','متأخر':'b-red','مكتمل':'b-green'};
-  document.getElementById('pr-tbl').innerHTML='<thead><tr><th>رقم الطلب</th><th>الصنف</th><th>المورد</th><th>المرحلة الحالية</th><th>التقدم</th><th>الاحتياج</th><th>الحالة</th><th></th></tr></thead><tbody>'+(rows.length?rows.map(r=>{const s=pStatus(r),p=Math.round(pDone(r)*100/PR_STAGES.length);return`<tr><td>${esc(r.num)}</td><td>${esc(r.item)}</td><td>${esc(r.supplier||'—')}</td><td>${esc(pCur(r))}</td><td><div class="pr-prog" title="${p}%"><i style="width:${p}%"></i></div></td><td>${esc(r.needDate||'—')}</td><td><span class="badge ${bd[s]}">${s}</span></td><td><button class="btn btn-secondary btn-sm" onclick="openPurch(${r.id})"><i class="ti ti-edit"></i> فتح</button></td></tr>`;}).join(''):'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text3)">لا توجد طلبات شراء</td></tr>')+'</tbody>';
-}
-function openPurch(id){
-  if(!canPurch())return;_prId=id||null;const r=id?pList().find(x=>x.id===id)||{}:{};
-  document.getElementById('purchTitle').textContent=id?'طلب شراء: '+(r.num||''):'طلب شراء خارجي جديد';
-  document.getElementById('purchDel').style.display=(id&&currentUser.isAdmin)?'':'none';
-  const f=PR_FIELDS.map(([k,l,t])=>`<div class="form-group"><label class="form-label">${l}</label><input class="form-input" id="pf-${k}" type="${t||'text'}" value="${esc(r[k]==null?'':String(r[k]))}"></div>`).join('');
-  const pri=['عادية','مهمة','عاجلة'].map(x=>`<option${(r.pri||'عادية')===x?' selected':''}>${x}</option>`).join('');
-  const st=PR_STAGES.map((n,i)=>{const x=(r.st||{})[i]||{};return`<div class="pr-st"><b>${i+1}</b><span>${n}</span><input class="form-input" type="date" id="ps-d${i}" value="${esc(x.d||'')}" title="تاريخ إنجاز المرحلة"><input class="form-input" id="ps-n${i}" placeholder="ملاحظة" value="${esc(x.n||'')}"></div>`;}).join('');
-  document.getElementById('purchBody').innerHTML=`<div class="form-grid">${f}<div class="form-group"><label class="form-label">الأولوية</label><select class="form-select" id="pf-pri">${pri}</select></div><div class="form-group full"><label class="form-label">ملاحظات عامة</label><textarea class="form-input" id="pf-notes" rows="2">${esc(r.notes||'')}</textarea></div></div><div class="card-title" style="margin:16px 0 8px"><i class="ti ti-timeline"></i> مراحل الطلب <span style="font-size:11px;color:var(--text3);font-weight:400">(اكتب تاريخ إنجاز كل مرحلة عند انتهائها)</span></div>${st}`;
-  openModal('purchModal');
-}
-function savePurch(){
-  if(!canPurch())return;const g=k=>document.getElementById('pf-'+k).value.trim(),num=g('num'),item=g('item');
-  if(!num||!item){toast('رقم الطلب والصنف مطلوبان','error');return;}
-  const arr=pList().slice(),i=_prId?arr.findIndex(x=>x.id===_prId):-1;
-  if(arr.some((x,k)=>x.num===num&&k!==i)){toast('رقم الطلب مسجّل من قبل','error');return;}
-  const r=i>=0?{...arr[i]}:{id:Date.now(),createdBy:currentUser.name,createdAt:new Date().toISOString()};
-  PR_FIELDS.forEach(([k])=>r[k]=g(k));r.pri=document.getElementById('pf-pri').value;r.notes=g('notes');
-  r.st={};PR_STAGES.forEach((_,k)=>{const d=document.getElementById('ps-d'+k).value,n=document.getElementById('ps-n'+k).value.trim();if(d||n)r.st[k]={d,n};});
-  r.updatedBy=currentUser.name;r.updatedAt=new Date().toISOString();r._u=Date.now();
-  if(i>=0)arr[i]=r;else arr.unshift(r);
-  pSave(arr);
-  closeModal('purchModal');renderPurch();toast('تم حفظ طلب الشراء');
-}
-function delPurch(){
-  if(!guardAdmin()||!_prId)return;if(!confirm('حذف طلب الشراء نهائياً؟'))return;
-  const s=pStore();s.tomb[_prId]=Date.now();pSave(s.items.filter(r=>r.id!==_prId));
-  closeModal('purchModal');renderPurch();toast('تم الحذف');
-}
-function renderAreas(){
-  const c=document.getElementById('areaCard');if(!c)return;const adm=!!(currentUser&&currentUser.isAdmin);c.style.display=adm?'':'none';if(!adm)return;
-  const ar=(getData().settings||{}).areas||{};
-  document.getElementById('areaList').innerHTML=getUsers().filter(u=>!u.isAdmin).map(u=>`<div class="dept-set-row"><span>${esc(u.name)}</span><select class="form-select" style="margin-inline-start:auto;width:auto" onchange="setArea(${u.id},this.value)"><option value="corr"${ar[u.id]!=='purch'?' selected':''}>الكتب الدورية</option><option value="purch"${ar[u.id]==='purch'?' selected':''}>المشتريات الخارجية</option></select></div>`).join('')||'<div class="dept-empty">لا يوجد مستخدمون</div>';
-}
-function setArea(id,v){if(!guardAdmin())return;const d=getData();d.settings=d.settings||{};d.settings.areas=Object.assign({},d.settings.areas,{[id]:v});saveD(d,{type:'settings',action:'تعديل نطاق عمل مستخدم'});toast('تم تحديث نطاق العمل');}
 
 // ── CUSTOM COLORS (تخصيص الألوان يدوياً) ──
 function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||'#3b82f6';}
@@ -1815,15 +1919,16 @@ function openModal(id){
 
 
 // ═════════ الصلاحيات ═════════
-function can(p){if(!currentUser)return false;if(currentUser.isAdmin)return true;if(userArea()==='purch')return false;return (currentUser.perms||DEFAULT_PERMS).includes(p);}
+function can(p){if(!currentUser)return false;if(currentUser.isAdmin)return true;return (currentUser.perms||DEFAULT_PERMS).includes(p);}
 function guard(p){if(!can(p)){toast('ليس لديك صلاحية لتنفيذ هذه العملية','error');return false;}return true;}
 function guardAdmin(){if(!(currentUser&&currentUser.isAdmin)){toast('هذه العملية للمسؤول فقط','error');return false;}return true;}
 function applyPerms(){
   const q=s=>document.querySelector('.nav-item[onclick*="\''+s+'\'"]');
-  [['new-request',can('add')],['register-reply',can('reply')],['reports',can('export')],['audit-log',!!(currentUser&&currentUser.isAdmin)]].forEach(([p,ok])=>{const el=q(p);if(el)el.style.display=ok?'':'none';});prNav();
+  [['new-request',can('add')],['register-reply',can('reply')],['reports',can('export')],['audit-log',!!(currentUser&&currentUser.isAdmin)],['pur-new',can('add')],['pur-dash',canAmount()]].forEach(([p,ok])=>{const el=q(p);if(el)el.style.display=ok?'':'none';});
+  document.querySelectorAll('[data-mod]').forEach(el=>{el.style.display=hasMod(el.dataset.mod)?'':'none';});
 }
 function permsLabel(u){if(u.isAdmin)return 'كل الصلاحيات';const l=(u.perms||DEFAULT_PERMS).map(p=>PERM_LBL[p]).filter(Boolean);return l.length?l.join('، '):'عرض فقط';}
-const ROLE_PRESET={'مشرف':['add','edit','reply','export'],'موظف متابعة':['add','edit','reply','export'],'مدير قسم':['edit','reply','export'],'مستخدم عادي':['add','reply'],'مشاهد (قراءة فقط)':[],'مدير عام':['add','edit','reply','delete','export']};
+const ROLE_PRESET={'مشرف':['add','edit','reply','export'],'موظف متابعة':['add','edit','reply','export'],'مدير قسم':['edit','reply','export'],'مستخدم عادي':['add','reply'],'مشاهد (قراءة فقط)':[],'مدير عام':['add','edit','reply','delete','export'],'موظف مشتريات':['add','edit','reply','export']};
 function presetPerms(){const p=ROLE_PRESET[document.getElementById('u-role').value]||[];document.querySelectorAll('#u-perms input[data-p]').forEach(c=>c.checked=p.includes(c.dataset.p));}
 function setPermBoxes(u){const p=u.isAdmin?Object.keys(PERM_LBL):(u.perms||DEFAULT_PERMS);document.querySelectorAll('#u-perms input[data-p]').forEach(c=>c.checked=p.includes(c.dataset.p));document.getElementById('u-isadmin').checked=!!u.isAdmin;}
 function setRegistrar(id){const el=document.getElementById(id);if(el)el.value=currentUser?(currentUser.name+' — '+currentUser.role):'';}
@@ -1920,7 +2025,7 @@ function finishLogin(user){
   document.getElementById('headerName').textContent=user.name;document.getElementById('headerRole').textContent=user.role;document.getElementById('headerAvatar').textContent=user.name.charAt(0);
   document.getElementById('loginPwd').value='';
   sessionTimeout=getSettings().session||30;
-  updateCompanyName();applyPerms();updateDelayedBadge();updateOnlineUsers();showPage('dashboard');startPolling();
+  updateCompanyName();applyPerms();updateDelayedBadge();updateOnlineUsers();showPage(landingPage());startPolling();
   if(user.mustChange)openModal('chgPwdModal');
 }
 async function doLoginServer(name,pwd){

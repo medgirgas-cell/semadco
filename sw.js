@@ -1,5 +1,5 @@
 // Service Worker — نظام متابعة الكتب الدورية
-const VER='v4';
+const VER='v3';
 const CACHE='corresp-'+VER;
 const SHELL=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL).catch(()=>{})).then(()=>self.skipWaiting()));});
