@@ -81,6 +81,8 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
 .sync-indicator{display:flex;align-items:center;gap:6px;font-size:var(--fs-xs);color:var(--text3);padding:4px 10px;border-radius:6px;background:var(--bg3);}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--green);}
 .sync-dot.syncing{animation:pulse 1s infinite;}
+.sync-dot.err{background:var(--red);animation:none}
+#syncText.err{color:var(--red);font-weight:700}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
 /* ── BODY WRAP ── */
 .body-wrap{display:flex;flex:1;overflow:hidden;}
@@ -1061,7 +1063,15 @@ setInterval(()=>{if(isDirty)manualSave();},30000);
 function saveD(d,au){if(au)addAudit(d,au);setData(d);markSaved('حُفظ');if(bc&&!SERVER)bc.postMessage('upd');}
 
 // ── SYNC INDICATOR ──
-function showSync(m){const dot=document.getElementById('syncDot'),txt=document.getElementById('syncText');dot.classList.add('syncing');txt.textContent=m;setTimeout(()=>{dot.classList.remove('syncing');txt.textContent=SYNC_LABEL;},1500);}
+let LINK_OK=true,LINK_MSG='غير متزامن';
+function setLinkState(ok,msg){
+  LINK_OK=ok;if(msg)LINK_MSG=msg;
+  const dot=document.getElementById('syncDot'),txt=document.getElementById('syncText');if(!dot||!txt)return;
+  dot.classList.toggle('err',!ok);txt.classList.toggle('err',!ok);dot.classList.remove('syncing');
+  txt.textContent=ok?SYNC_LABEL:LINK_MSG;
+  if(!ok){const h=document.getElementById('onlineCountHdr');if(h)h.textContent='';}
+}
+function showSync(m){const dot=document.getElementById('syncDot'),txt=document.getElementById('syncText');if(!LINK_OK){txt.textContent=LINK_MSG;return;}dot.classList.add('syncing');txt.textContent=m;setTimeout(()=>{dot.classList.remove('syncing');txt.textContent=LINK_OK?SYNC_LABEL:LINK_MSG;},1500);}
 
 // ── AUDIT ──
 function addAudit(d,e){if(!d.audit)d.audit=[];d.audit.unshift({...e,user:currentUser?currentUser.name:'—',time:new Date().toISOString()});if(d.audit.length>500)d.audit=d.audit.slice(0,500);}
@@ -1170,14 +1180,14 @@ function updateCompanyName(){const s=getSettings();if(s.company){document.getEle
 function updateOnlineUsers(){
   if(!currentUser)return;
   let isOn;
-  if(SERVER){isOn=u=>ONLINE.includes(u.id)||u.id===currentUser.id;}
+  if(SERVER){isOn=u=>u.id===currentUser.id||(LINK_OK&&ONLINE.includes(u.id));}
   else{localStorage.setItem('on_'+currentUser.id,Date.now());const now=Date.now();isOn=u=>(now-parseInt(localStorage.getItem('on_'+u.id)||'0'))<120000||u.id===currentUser.id;}
   const users=getUsers().slice().sort((a,b)=>(isOn(b)-isOn(a))||String(a.name).localeCompare(String(b.name),'ar')),n=users.filter(isOn).length;
   const list=document.getElementById('onlineUsersList');
   if(list)list.innerHTML=users.map(u=>{const on=isOn(u);return `<div class="online-user-item ${on?'on':'off'}" title="${on?'متصل الآن':'غير متصل'}"><div class="online-dot ${on?'on':''}"></div>${esc(u.name)}${u.id===currentUser.id?' (أنت)':''}<span class="orole">${esc(u.role||'')}</span></div>`;}).join('');
   const t=document.getElementById('onlineTitle');if(t)t.textContent='المتواجدون الآن ('+n+')';
   const sc=document.getElementById('srvSyncCard');if(sc){sc.style.display=SERVER?'':'none';const tx=document.getElementById('srvSyncTxt');if(tx)tx.innerHTML='<span style="color:var(--green);">●</span> متصل بالخادم — البيانات مشتركة بين كل الأجهزة<br><b>'+n+'</b> متصل الآن';}
-  const h=document.getElementById('onlineCountHdr');if(h)h.textContent=(SERVER||CLOUD.on)?'● '+n+' متصل الآن':'';
+  const h=document.getElementById('onlineCountHdr');if(h)h.textContent=((SERVER||CLOUD.on)&&LINK_OK)?'● '+n+' متصل الآن':'';
 }
 setInterval(updateOnlineUsers,30000);
 
@@ -2023,10 +2033,10 @@ async function serverPush(){
     if(r.ok){
       applyState(r.data.state);
       if(r.data.rejected&&r.data.rejected.length)toast([...new Set(r.data.rejected)].join(' | '),'error');
-      refreshAllViews();applyPerms();updateCompanyName();showSync('تمت المزامنة');
+      setLinkState(true);refreshAllViews();applyPerms();updateCompanyName();showSync('تمت المزامنة');
     }else if(r.status!==401){toast(r.data.error||'تعذر الحفظ على الخادم','error');await pullState(true);}
   }catch(e){
-    toast('انقطع الاتصال بالخادم — التغييرات لم تُحفظ بعد، ستُعاد المحاولة تلقائياً','warning');
+    setLinkState(false,'غير متصل بالخادم');toast('انقطع الاتصال بالخادم — التغييرات لم تُحفظ بعد، ستُعاد المحاولة تلقائياً','warning');
     setTimeout(serverPush,5000);
   }finally{_pushing=false;if(_pushAgain){_pushAgain=false;schedulePush();}}
 }
@@ -2034,10 +2044,11 @@ async function pullState(force){
   if(!SERVER||!currentUser||!TOKEN)return;
   if(!force&&(_pushing||computeDiff(_cache)))return;
   try{
-    const r=await api('/api/state?rev='+(force?0:_rev));if(!r.ok)return;
+    const r=await api('/api/state?rev='+(force?0:_rev));if(!r.ok){if(r.status!==401)setLinkState(false,'غير متصل بالخادم');return;}
+    const was=LINK_OK;setLinkState(true);
     if(r.data.same){ONLINE=r.data.online||[];updateOnlineUsers();return;}
     applyState(r.data);refreshAllViews();applyPerms();updateCompanyName();showSync('تم التزامن');
-  }catch(e){}
+  }catch(e){setLinkState(false,'غير متصل بالخادم');updateOnlineUsers();}
 }
 function startPolling(){if(!_pollT)_pollT=setInterval(pullState,4000);}
 function serverLoggedOut(msg){
@@ -2114,11 +2125,13 @@ function cloudBaseline(){
   CLOUD.base=b;saveBase();_cloudApplying=true;setData(d);_cloudApplying=false;
 }
 function cloudSchedule(){clearTimeout(CLOUD.timer);CLOUD.timer=setTimeout(cloudSync,700);}
-function cloudStatus(msg,err){const e=document.getElementById('cl-status');if(e){e.textContent=msg;e.style.color=err?'var(--red)':'var(--text3)';}if(err)document.getElementById('syncText').textContent='خطأ في المزامنة';}
+function cloudStatus(msg,err){const e=document.getElementById('cl-status');if(e){e.textContent=msg;e.style.color=err?'var(--red)':'var(--text3)';}if(err){setLinkState(false,'غير متزامن');const t=document.getElementById('syncText');if(t)t.title=msg;}else{setLinkState(true);const t=document.getElementById('syncText');if(t)t.title='';}}
+function cloudWhy(e){return e&&(e.status===401||e.status===403)?'مرفوض: راجع قواعد قاعدة البيانات (Rules)':(e&&e.status?'خطأ من الخادم HTTP '+e.status:(/Failed to fetch|NetworkError|Load failed|network/i.test(String(e&&e.message))?(navigator.onLine===false?'لا يوجد اتصال بالإنترنت':'تعذر الوصول لقاعدة البيانات (الإنترنت أو جدار ناري يحجب Firebase)'):'خطأ داخلي: '+((e&&e.message)||e)));}
 function cloudStart(){
   if(CLOUD.poll)return;
-  CLOUD.poll=setInterval(async()=>{if(!CLOUD.on||CLOUD.busy)return;try{const m=await fb('rooms/'+CLOUD.room+'/meta');if(m!==CLOUD.meta)cloudSync();}catch(e){cloudStatus('تعذر الاتصال بالسحابة',true);}},5000);
+  CLOUD.poll=setInterval(async()=>{if(!CLOUD.on||CLOUD.busy)return;try{const m=await fb('rooms/'+CLOUD.room+'/meta');if(CLOUD.err||m!==CLOUD.meta)cloudSync();}catch(e){CLOUD.err=true;cloudStatus(cloudWhy(e)+' — ستُعاد المحاولة',true);}},5000);
   window.addEventListener('online',cloudSchedule);
+  window.addEventListener('offline',()=>{CLOUD.err=true;cloudStatus('لا يوجد اتصال بالإنترنت — ستُعاد المحاولة',true);});
 }
 async function cloudSync(){
   if(!CLOUD.on)return;
@@ -2174,9 +2187,9 @@ async function cloudSync(){
     if(pushed){const m=Date.now()+'-'+Math.random().toString(36).slice(2,6);await fb(R+'/meta','PUT',m);CLOUD.meta=m;if(au.length){_cloudApplying=true;setData(getData());_cloudApplying=false;}}
     else CLOUD.meta=tree.meta||'';
     if(ch){const me=(getData().users||[]).find(u=>currentUser&&u.id===currentUser.id);if(me)currentUser=me;refreshAllViews();applyPerms();updateCompanyName();}
-    cloudStatus('آخر مزامنة: '+fmtTime(new Date()));showSync('تمت المزامنة السحابية');
+    CLOUD.err=false;cloudStatus('آخر مزامنة: '+fmtTime(new Date()));showSync('تمت المزامنة السحابية');
   }catch(e){
-    cloudStatus(e.status===401||e.status===403?'مرفوض: راجع قواعد قاعدة البيانات (Rules)':'تعذر الاتصال بالسحابة — ستُعاد المحاولة',true);
+    console.error('cloudSync',e);CLOUD.err=true;cloudStatus(cloudWhy(e)+' — ستُعاد المحاولة',true);
   }finally{CLOUD.busy=false;if(CLOUD.again){CLOUD.again=false;cloudSchedule();}}
 }
 async function cloudEnable(url,room,pwd){
