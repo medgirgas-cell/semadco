@@ -355,6 +355,13 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
 .wm-row input[type=range]{flex:1;min-width:140px}
 
 .ptl{border-right:3px solid var(--border2);padding:0 14px 12px 0;margin-right:8px}.ptl.done{border-color:var(--green)}.ptl.cur{border-color:var(--blue)}.ptl.late{border-color:var(--red)}
+
+.online-dot{background:#475569}
+.online-dot.on{background:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.28)}
+.online-user-item.on{color:var(--green);font-weight:700}
+.online-user-item.off{opacity:.65}
+.online-user-item .orole{margin-inline-start:auto;font-size:10px;color:var(--text3);font-weight:400}
+.online-user-item.on .orole{color:var(--green)}
 </style>
 </head>
 <body>
@@ -501,6 +508,7 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
       <div class="sync-indicator" id="syncIndicator">
         <div class="sync-dot" id="syncDot"></div>
         <span id="syncText">متزامن</span>
+        <span id="onlineCountHdr" title="الأجهزة المتصلة الآن" style="margin-inline-start:8px;color:var(--green);font-weight:700;font-size:11.5px;"></span>
       </div>
       <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="تبديل الوضع الليلي/النهاري" aria-label="تبديل المظهر">
         <i class="ti ti-moon" id="themeIcon"></i>
@@ -555,7 +563,7 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
         <div class="nav-item" onclick="showPage('settings')"><i class="ti ti-settings"></i> الإعدادات</div>
       </div>
       <div class="online-users-bar" id="onlineUsersBar">
-        <div class="title">المستخدمون</div>
+        <div class="title" id="onlineTitle">المستخدمون</div>
         <div id="onlineUsersList"></div>
       </div>
     </div>
@@ -950,7 +958,11 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
       <input type="hidden" id="u-editId">
       <div class="form-group" style="margin-bottom:12px;"><label class="form-label">الاسم الكامل <span class="req">*</span></label><input class="form-input" id="u-name" placeholder="اسم المستخدم"></div>
       <div class="form-group" style="margin-bottom:12px;"><label class="form-label">الدور الوظيفي <span class="req">*</span></label>
-        <select class="form-select" id="u-role" onchange="presetPerms()"><option value="مشرف">مشرف</option><option value="موظف متابعة">موظف متابعة</option><option value="مدير قسم">مدير قسم</option><option value="مستخدم عادي">مستخدم عادي</option><option value="مشاهد (قراءة فقط)">مشاهد (قراءة فقط)</option><option value="مدير عام">مدير عام</option><option value="موظف مشتريات">موظف مشتريات (قسم المشتريات فقط)</option></select><div style="font-size:11px;color:var(--text3);margin-top:4px;">موظف مشتريات: يرى المشتريات فقط • المدير العام والمسؤول: القسمان • بقية الأدوار: الكتب الدورية فقط</div>
+        <select class="form-select" id="u-role" onchange="presetPerms()">
+          <optgroup label="الكتب الدورية"><option value="موظف متابعة">موظف متابعة الكتب الدورية</option><option value="مدير متابعة الكتب الدورية">مدير متابعة الكتب الدورية</option></optgroup>
+          <optgroup label="طلبات الشراء الخارجية"><option value="موظف مشتريات">موظف مشتريات</option><option value="مدير المشتريات">مدير المشتريات</option></optgroup>
+          <optgroup label="أدوار عامة"><option value="مدير عام">مدير عام (القسمان)</option><option value="مشرف">مشرف (الكتب الدورية)</option><option value="مدير قسم">مدير قسم (الكتب الدورية)</option><option value="مستخدم عادي">مستخدم عادي (الكتب الدورية)</option><option value="مشاهد (قراءة فقط)">مشاهد (قراءة فقط)</option></optgroup>
+        </select><div style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.7;">الموظف: إدخال ومتابعة في قسمه فقط • المدير: صلاحيات كاملة في قسمه (حذف + لوحة + عرض المبالغ للمشتريات) • المدير العام: القسمان معاً</div>
       </div>
       <div class="form-group" style="margin-bottom:12px;"><label class="form-label">كلمة المرور <span class="req" id="u-pwd-req">*</span></label><input class="form-input" type="password" id="u-pwd" placeholder="كلمة مرور المستخدم"><div style="font-size:10.5px;color:var(--text3);margin-top:3px;" id="u-pwd-hint">اتركه فارغاً لعدم التغيير عند التعديل</div></div>
       <div class="form-group" style="margin-bottom:12px;"><label class="form-label">الصلاحيات</label>
@@ -1151,10 +1163,14 @@ function updateCompanyName(){const s=getSettings();if(s.company){document.getEle
 
 function updateOnlineUsers(){
   if(!currentUser)return;
-  if(SERVER){const list=document.getElementById('onlineUsersList');if(list)list.innerHTML=getUsers().map(u=>`<div class="online-user-item"><div class="online-dot" style="background:${ONLINE.includes(u.id)?'#22c55e':'#475569'};"></div>${esc(u.name)}</div>`).join('');return;}
-  localStorage.setItem('on_'+currentUser.id,Date.now());
-  const users=getUsers(),list=document.getElementById('onlineUsersList'),now=Date.now();
-  list.innerHTML=users.map(u=>{const ts=parseInt(localStorage.getItem('on_'+u.id)||'0'),on=(now-ts)<120000;const col=on?'#22c55e':'#475569';return`<div class="online-user-item"><div class="online-dot" style="background:${col};"></div>${esc(u.name)}</div>`;}).join('');
+  let isOn;
+  if(SERVER){isOn=u=>ONLINE.includes(u.id)||u.id===currentUser.id;}
+  else{localStorage.setItem('on_'+currentUser.id,Date.now());const now=Date.now();isOn=u=>(now-parseInt(localStorage.getItem('on_'+u.id)||'0'))<120000||u.id===currentUser.id;}
+  const users=getUsers().slice().sort((a,b)=>(isOn(b)-isOn(a))||String(a.name).localeCompare(String(b.name),'ar')),n=users.filter(isOn).length;
+  const list=document.getElementById('onlineUsersList');
+  if(list)list.innerHTML=users.map(u=>{const on=isOn(u);return `<div class="online-user-item ${on?'on':'off'}" title="${on?'متصل الآن':'غير متصل'}"><div class="online-dot ${on?'on':''}"></div>${esc(u.name)}${u.id===currentUser.id?' (أنت)':''}<span class="orole">${esc(u.role||'')}</span></div>`;}).join('');
+  const t=document.getElementById('onlineTitle');if(t)t.textContent='المتواجدون الآن ('+n+')';
+  const h=document.getElementById('onlineCountHdr');if(h)h.textContent=(SERVER||CLOUD.on)?'● '+n+' متصل الآن':'';
 }
 setInterval(updateOnlineUsers,30000);
 
@@ -1617,7 +1633,7 @@ function letterReqs(d){return (d.requests||[]).filter(r=>!isPur(r));}
 function purReqs(d){return (d.requests||[]).filter(isPur);}
 function userMods(u){u=u||currentUser;if(!u)return [];if(u.isAdmin||String(u.role||'').includes('مدير عام'))return ['l','p'];return String(u.role||'').includes('مشتريات')?['p']:['l'];}
 function hasMod(m){return userMods().includes(m);}
-function canAmount(){return !!currentUser&&(currentUser.isAdmin||String(currentUser.role||'').includes('مدير عام'));}
+function canAmount(){return !!currentUser&&(currentUser.isAdmin||['مدير عام','مدير المشتريات'].includes(String(currentUser.role||'')));}
 function landingPage(){return hasMod('l')?'dashboard':'pur-list';}
 function pageBlocked(id){
   const L=['dashboard','new-request','register-reply','all-requests','stats','reports'],P=['pur-dash','pur-new','pur-list'];
@@ -1928,7 +1944,7 @@ function applyPerms(){
   document.querySelectorAll('[data-mod]').forEach(el=>{el.style.display=hasMod(el.dataset.mod)?'':'none';});
 }
 function permsLabel(u){if(u.isAdmin)return 'كل الصلاحيات';const l=(u.perms||DEFAULT_PERMS).map(p=>PERM_LBL[p]).filter(Boolean);return l.length?l.join('، '):'عرض فقط';}
-const ROLE_PRESET={'مشرف':['add','edit','reply','export'],'موظف متابعة':['add','edit','reply','export'],'مدير قسم':['edit','reply','export'],'مستخدم عادي':['add','reply'],'مشاهد (قراءة فقط)':[],'مدير عام':['add','edit','reply','delete','export'],'موظف مشتريات':['add','edit','reply','export']};
+const ROLE_PRESET={'مشرف':['add','edit','reply','export'],'موظف متابعة':['add','edit','reply','export'],'مدير قسم':['edit','reply','export'],'مستخدم عادي':['add','reply'],'مشاهد (قراءة فقط)':[],'مدير عام':['add','edit','reply','delete','export'],'موظف مشتريات':['add','edit','reply','export'],'مدير المشتريات':['add','edit','reply','delete','export'],'مدير متابعة الكتب الدورية':['add','edit','reply','delete','export']};
 function presetPerms(){const p=ROLE_PRESET[document.getElementById('u-role').value]||[];document.querySelectorAll('#u-perms input[data-p]').forEach(c=>c.checked=p.includes(c.dataset.p));}
 function setPermBoxes(u){const p=u.isAdmin?Object.keys(PERM_LBL):(u.perms||DEFAULT_PERMS);document.querySelectorAll('#u-perms input[data-p]').forEach(c=>c.checked=p.includes(c.dataset.p));document.getElementById('u-isadmin').checked=!!u.isAdmin;}
 function setRegistrar(id){const el=document.getElementById(id);if(el)el.value=currentUser?(currentUser.name+' — '+currentUser.role):'';}
