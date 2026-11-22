@@ -2102,6 +2102,8 @@ async function fb(path,method,body,q){
   if(!r.ok){const e=new Error('HTTP '+r.status);e.status=r.status;throw e;}
   return r.json();
 }
+// Firebase يحوّل المفاتيح الرقمية المتسلسلة (مثل أرقام المستخدمين 1،2،3) إلى مصفوفة فيها null — نعيدها كائناً
+function fbMap(x){if(!x)return {};if(Array.isArray(x)){const o={};x.forEach((v,i)=>{if(v!==null&&v!==undefined)o[i]=v;});return o;}return x;}
 async function par(tasks,n){for(let i=0;i<tasks.length;i+=n)await Promise.all(tasks.slice(i,i+n).map(f=>f()));}
 const hsh=t=>{let h=0;for(const c of t)h=(h*31+c.charCodeAt(0))|0;return (h>>>0).toString(36);};
 const akey=e=>String(Date.parse(e.time)||0).padStart(13,'0')+'-'+hsh((e.user||'')+(e.action||''));
@@ -2138,12 +2140,14 @@ async function cloudSync(){
   if(CLOUD.busy){CLOUD.again=true;return;}
   CLOUD.busy=true;showSync('جاري المزامنة...');
   try{
-    const R='rooms/'+CLOUD.room,tree=(await fb(R))||{},rt=tree.t||{};
+    const R='rooms/'+CLOUD.room,tree=(await fb(R))||{};
+    ['r','u','t'].forEach(k=>{tree[k]=fbMap(tree[k]);});const rt=tree.t;
     // أ) فك تشفير ما هو أحدث عند السحابة
     const d0=getData(),st={r:[],u:[],s:null,a:[]};
     for(const p of ['r','u']){
       const arr=p==='r'?d0.requests:(d0.users||[]),rem=tree[p]||{};
       for(const id of Object.keys(rem)){
+        if(!rem[id])continue;
         const loc=arr.find(x=>String(x.id)===id),ru=rem[id].u||0;
         if((rt[p+id]||0)>ru)continue;
         if(!loc||ru>(loc._u||0)){try{const o=await dec(rem[id]);o._u=ru;st[p].push(o);}catch(e){}}
