@@ -785,9 +785,9 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
       </div>
 
       <div id="page-settings" class="page">
-        <div class="page-header"><div><div class="page-title">الإعدادات</div><div class="page-sub">إعدادات النظام والمستخدمين</div></div></div>
+        <div class="page-header"><div><div class="page-title">الإعدادات</div><div class="page-sub" id="settingsSub">إعدادات النظام والمستخدمين</div></div></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:960px;">
-          <div class="card">
+          <div class="card" data-gm="1">
             <div class="card-title" style="margin-bottom:14px;"><i class="ti ti-user-circle"></i> بيانات حسابي</div>
             <div class="form-group" style="margin-bottom:10px;"><label class="form-label">الاسم</label><input class="form-input" id="s-name"></div>
             <div class="form-group" style="margin-bottom:10px;"><label class="form-label">الدور الوظيفي</label><input class="form-input" id="s-role"></div>
@@ -795,39 +795,39 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
             <div class="form-group" style="margin-bottom:14px;"><label class="form-label">تغيير كلمة المرور</label><input class="form-input" type="password" id="s-pwd" placeholder="اتركه فارغاً إذا لم تريد التغيير"></div>
             <button class="btn btn-primary btn-sm" onclick="saveSettings()"><i class="ti ti-check"></i> حفظ التعديلات</button>
           </div>
-          <div class="card">
+          <div class="card" data-gm="1">
             <div class="card-title" style="margin-bottom:4px;"><i class="ti ti-users"></i> إدارة المستخدمين <span style="font-size:10.5px;color:var(--text3);font-weight:400;" id="userCountLabel"></span></div>
             <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">الحد الأقصى 10 مستخدمين — المسؤول فقط يستطيع الإضافة والحذف</div>
             <div id="usersList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
             <button class="btn btn-primary btn-sm" id="addUserBtn" onclick="openAddUserModal()"><i class="ti ti-user-plus"></i> إضافة مستخدم جديد</button>
           </div>
-          <div class="card">
+          <div class="card" data-gm="1">
             <div class="card-title" style="margin-bottom:4px;"><i class="ti ti-droplet"></i> العلامة المائية للشعار</div>
             <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">تظهر خلف الصفحات وفي التقارير المطبوعة. الإعداد يُحفظ على هذا الجهاز.</div>
             <div class="wm-row"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="wm-on" onchange="wmSet()"> إظهار العلامة المائية</label>
               <label style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px;">الشفافية <input type="range" id="wm-op" min="2" max="20" step="1" oninput="wmSet()" aria-label="درجة ظهور العلامة المائية"> <b id="wm-op-v" style="min-width:34px;"></b></label></div>
           </div>
-          <div class="card">
+          <div class="card" data-gm="1">
             <div class="card-title" style="margin-bottom:4px;"><i class="ti ti-palette"></i> تخصيص الألوان <span id="thModeLabel" style="font-size:10.5px;color:var(--text3);font-weight:400;"></span></div>
             <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">التغيير يُحفظ على هذا الجهاز، ولكل وضع (ليلي / نهاري) ألوانه الخاصة. بدّل الوضع من زر الشمس/القمر بالأعلى لتخصيص الوضع الآخر.</div>
             <div class="th-presets" id="thPresets"></div>
             <div class="th-grid" id="thGrid"></div>
             <button class="btn btn-secondary btn-sm" onclick="resetCustomTheme()"><i class="ti ti-refresh"></i> استعادة الألوان الافتراضية</button>
           </div>
-          <div class="card">
+          <div class="card" data-gm="1">
             <div class="card-title" style="margin-bottom:4px;"><i class="ti ti-building"></i> الإدارات المرسلة <span style="font-size:10.5px;color:var(--text3);font-weight:400;" id="deptCountLabel"></span></div>
             <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">الإدارات المستخدمة في طلبات قائمة لا يمكن حذفها</div>
             <div id="deptSetList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;max-height:260px;overflow:auto;"></div>
             <div class="dept-new" style="margin-top:0"><input class="form-input" id="s-newdept" placeholder="إدارة جديدة..." onkeydown="if(event.key==='Enter'){event.preventDefault();addDeptFromSettings();}"><button class="btn btn-primary btn-sm" onclick="addDeptFromSettings()"><i class="ti ti-plus"></i> إضافة</button></div>
           </div>
-          <div class="card">
+          <div class="card" data-gm="1">
             <div class="card-title" style="margin-bottom:14px;"><i class="ti ti-adjustments"></i> إعدادات المتابعة</div>
             <div class="form-group" style="margin-bottom:10px;"><label class="form-label">مدة الرد القياسية (أيام)</label><input type="number" class="form-input" id="s-days" value="7" min="1" max="60"></div>
             <div class="form-group" style="margin-bottom:10px;"><label class="form-label">الهدف الشهري للإنجاز (%)</label><input type="number" class="form-input" id="s-target" value="70" min="10" max="100"></div>
             <div class="form-group" style="margin-bottom:14px;"><label class="form-label">مهلة الجلسة (دقيقة)</label><input type="number" class="form-input" id="s-session" value="30" min="5" max="120"></div>
             <button class="btn btn-primary btn-sm" onclick="saveSettings()"><i class="ti ti-check"></i> حفظ</button>
           </div>
-          <div class="card">
+          <div class="card" data-gm="1">
             <div class="card-title" style="margin-bottom:14px;"><i class="ti ti-database"></i> البيانات</div>
             <div style="margin-bottom:10px;font-size:12px;color:var(--text2);" id="s-datainfo"></div>
             <div style="display:flex;flex-direction:column;gap:8px;">
@@ -838,6 +838,10 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
             </div>
           </div>
 
+          <div class="card" id="srvSyncCard" style="display:none;">
+            <div class="card-title" style="margin-bottom:10px;"><i class="ti ti-refresh"></i> المزامنة بين الأجهزة</div>
+            <div id="srvSyncTxt" style="font-size:13px;line-height:1.9;"></div>
+          </div>
           <div class="card" id="installCard">
             <div class="card-title" style="margin-bottom:10px;"><i class="ti ti-device-mobile"></i> تثبيت على الموبايل (اختصار)</div>
             <div id="installStd" style="font-size:12px;color:var(--text2);line-height:1.9;margin-bottom:10px;">يظهر البرنامج كأيقونة على الشاشة الرئيسية ويفتح بملء الشاشة زي أي تطبيق.</div>
@@ -846,8 +850,8 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
           </div>
           <div class="card" id="cloudCard" style="display:none;">
             <div class="card-title" style="margin-bottom:10px;"><i class="ti ti-cloud"></i> المزامنة بين الأجهزة (سحابية)</div>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.8;">لاستخدام النظام من أكثر من جهاز بنفس البيانات من غير خادم. تحتاج تجهيزاً لمرة واحدة بحساب جوجل (مجاني). البيانات تُشفَّر داخل جهازك قبل رفعها.</div>
-            <details style="margin-bottom:12px;font-size:12px;color:var(--text2);line-height:1.9;"><summary style="cursor:pointer;font-weight:700;color:var(--text);">① خطوات التجهيز</summary>
+            <div data-adm="1" style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.8;">لاستخدام النظام من أكثر من جهاز بنفس البيانات من غير خادم. تحتاج تجهيزاً لمرة واحدة بحساب جوجل (مجاني). البيانات تُشفَّر داخل جهازك قبل رفعها.</div>
+            <details data-adm="1" style="margin-bottom:12px;font-size:12px;color:var(--text2);line-height:1.9;"><summary style="cursor:pointer;font-weight:700;color:var(--text);">① خطوات التجهيز</summary>
               <ol style="padding-right:18px;margin-top:6px;">
                 <li>ادخل console.firebase.google.com وأنشئ مشروعاً (Create project).</li>
                 <li>من القائمة: Build ← Realtime Database ← Create Database (أي موقع) ← ابدأ بالوضع المقفول (locked).</li>
@@ -856,21 +860,23 @@ body{font-family:"Tajawal",sans-serif;background:var(--bg);color:var(--text);fon
                 <li>انسخ رابط قاعدة البيانات من أعلى صفحة Data (يشبه https://xxxx-default-rtdb.firebaseio.com).</li>
               </ol></details>
             <div id="cl-off">
+              <div data-adm="1">
               <div style="font-weight:700;margin-bottom:8px;">② بيانات الربط (أول جهاز)</div>
               <div class="form-group" style="margin-bottom:10px;"><label class="form-label">رابط قاعدة البيانات</label><input class="form-input" id="cl-url" dir="ltr" placeholder="https://xxxx-default-rtdb.firebaseio.com"></div>
               <div class="form-group" style="margin-bottom:10px;"><label class="form-label">اسم الغرفة (سرّي)</label><input class="form-input" id="cl-room" dir="ltr" placeholder="مثال: followup-7k3x9a"></div>
               <div class="form-group" style="margin-bottom:10px;"><label class="form-label">كلمة سر التشفير (6 أحرف فأكثر)</label>
                 <div style="display:flex;gap:8px;"><input class="form-input" id="cl-pwd" dir="ltr" style="flex:1;"><button class="btn btn-secondary btn-sm" onclick="cloudGen()">توليد</button></div></div>
               <button class="btn btn-primary btn-sm" onclick="cloudActivate()"><i class="ti ti-cloud-up"></i> تفعيل المزامنة</button>
+              </div>
               <div style="font-weight:700;margin:16px 0 8px;">③ جهاز آخر؟ الصق رمز الربط</div>
               <div style="display:flex;gap:8px;"><input class="form-input" id="cl-link" dir="ltr" style="flex:1;" placeholder="CT1...."><button class="btn btn-secondary btn-sm" onclick="cloudLinkBtn()">ربط</button></div>
             </div>
             <div id="cl-on" style="display:none;">
               <div style="font-size:13px;margin-bottom:8px;"><span style="color:var(--green);">●</span> المزامنة مفعّلة — الغرفة: <strong id="cl-room-lbl" dir="ltr"></strong></div>
               <div style="font-size:11.5px;color:var(--text3);margin-bottom:6px;" id="cl-status"></div>
-              <label class="form-label">رمز الربط لباقي الأجهزة (سرّي — يحتوي كلمة السر)</label>
-              <div style="display:flex;gap:8px;margin-bottom:10px;"><input class="form-input" id="cl-code" dir="ltr" readonly style="flex:1;"><button class="btn btn-secondary btn-sm" onclick="cloudCopy()">نسخ</button></div>
-              <div style="display:flex;gap:8px;"><button class="btn btn-secondary btn-sm" onclick="cloudSync()"><i class="ti ti-refresh"></i> مزامنة الآن</button><button class="btn btn-danger btn-sm" onclick="cloudDisableBtn()"><i class="ti ti-cloud-off"></i> إيقاف</button></div>
+              <div data-adm="1"><label class="form-label">رمز الربط لباقي الأجهزة (سرّي — يحتوي كلمة السر)</label>
+              <div style="display:flex;gap:8px;margin-bottom:10px;"><input class="form-input" id="cl-code" dir="ltr" readonly style="flex:1;"><button class="btn btn-secondary btn-sm" onclick="cloudCopy()">نسخ</button></div></div>
+              <div style="display:flex;gap:8px;"><button class="btn btn-secondary btn-sm" onclick="cloudSync()"><i class="ti ti-refresh"></i> مزامنة الآن</button><button class="btn btn-danger btn-sm" data-adm="1" onclick="cloudDisableBtn()"><i class="ti ti-cloud-off"></i> إيقاف</button></div>
             </div>
             <div style="font-size:11px;color:var(--text3);margin-top:12px;line-height:1.8;">🔒 احتفظ بكلمة السر ورمز الربط؛ لو ضاعوا لا يمكن استرجاع البيانات من السحابة. الصلاحيات في هذا الوضع تُطبَّق داخل المتصفح فقط.</div>
           </div>
@@ -1170,6 +1176,7 @@ function updateOnlineUsers(){
   const list=document.getElementById('onlineUsersList');
   if(list)list.innerHTML=users.map(u=>{const on=isOn(u);return `<div class="online-user-item ${on?'on':'off'}" title="${on?'متصل الآن':'غير متصل'}"><div class="online-dot ${on?'on':''}"></div>${esc(u.name)}${u.id===currentUser.id?' (أنت)':''}<span class="orole">${esc(u.role||'')}</span></div>`;}).join('');
   const t=document.getElementById('onlineTitle');if(t)t.textContent='المتواجدون الآن ('+n+')';
+  const sc=document.getElementById('srvSyncCard');if(sc){sc.style.display=SERVER?'':'none';const tx=document.getElementById('srvSyncTxt');if(tx)tx.innerHTML='<span style="color:var(--green);">●</span> متصل بالخادم — البيانات مشتركة بين كل الأجهزة<br><b>'+n+'</b> متصل الآن';}
   const h=document.getElementById('onlineCountHdr');if(h)h.textContent=(SERVER||CLOUD.on)?'● '+n+' متصل الآن':'';
 }
 setInterval(updateOnlineUsers,30000);
@@ -1809,7 +1816,7 @@ function renderStats(){
 
 // ── SETTINGS PAGE ──
 function loadSettings(){renderDeptSettings();renderThemeSettings();renderWmSettings();const s=getSettings(),cu=currentUser||{};document.getElementById('s-name').value=cu.name||s.name||'';document.getElementById('s-role').value=cu.role||s.role||'';document.getElementById('s-company').value=s.company||'';document.getElementById('s-days').value=s.days||7;document.getElementById('s-target').value=s.target||70;document.getElementById('s-session').value=s.session||30;const d=getData();document.getElementById('s-datainfo').textContent=`إجمالي الطلبات المحفوظة: ${letterReqs(d).length} كتاب دوري${hasMod('p')?' — '+purReqs(d).length+' طلب شراء':''}`;lockSettingsUI();cloudRenderUI();renderUsersList();}
-function saveSettings(){if(SERVER)return saveSettingsServer();
+function saveSettings(){if(!isGM()){toast('هذه العملية للمسؤول فقط','error');return;}if(SERVER)return saveSettingsServer();
   const d=getData(),newPwd=document.getElementById('s-pwd').value.trim();
   d.settings={departments:(d.settings||{}).departments,name:document.getElementById('s-name').value,role:document.getElementById('s-role').value,company:document.getElementById('s-company').value,days:parseInt(document.getElementById('s-days').value)||7,target:parseInt(document.getElementById('s-target').value)||70,session:parseInt(document.getElementById('s-session').value)||30};
   sessionTimeout=d.settings.session;
@@ -1937,11 +1944,14 @@ function openModal(id){
 // ═════════ الصلاحيات ═════════
 function can(p){if(!currentUser)return false;if(currentUser.isAdmin)return true;return (currentUser.perms||DEFAULT_PERMS).includes(p);}
 function guard(p){if(!can(p)){toast('ليس لديك صلاحية لتنفيذ هذه العملية','error');return false;}return true;}
+function isGM(){return !!(currentUser&&currentUser.isAdmin);}
 function guardAdmin(){if(!(currentUser&&currentUser.isAdmin)){toast('هذه العملية للمسؤول فقط','error');return false;}return true;}
 function applyPerms(){
   const q=s=>document.querySelector('.nav-item[onclick*="\''+s+'\'"]');
   [['new-request',can('add')],['register-reply',can('reply')],['reports',can('export')],['audit-log',!!(currentUser&&currentUser.isAdmin)],['pur-new',can('add')],['pur-dash',canAmount()]].forEach(([p,ok])=>{const el=q(p);if(el)el.style.display=ok?'':'none';});
   document.querySelectorAll('[data-mod]').forEach(el=>{el.style.display=hasMod(el.dataset.mod)?'':'none';});
+  document.querySelectorAll('#page-settings [data-gm]').forEach(el=>{el.style.display=isGM()?'':'none';});
+  const ss=document.getElementById('settingsSub');if(ss)ss.textContent=isGM()?'إعدادات النظام والمستخدمين':'المزامنة والتثبيت';
 }
 function permsLabel(u){if(u.isAdmin)return 'كل الصلاحيات';const l=(u.perms||DEFAULT_PERMS).map(p=>PERM_LBL[p]).filter(Boolean);return l.length?l.join('، '):'عرض فقط';}
 const ROLE_PRESET={'مشرف':['add','edit','reply','export'],'موظف متابعة':['add','edit','reply','export'],'مدير قسم':['edit','reply','export'],'مستخدم عادي':['add','reply'],'مشاهد (قراءة فقط)':[],'مدير عام':['add','edit','reply','delete','export'],'موظف مشتريات':['add','edit','reply','export'],'مدير المشتريات':['add','edit','reply','delete','export'],'مدير متابعة الكتب الدورية':['add','edit','reply','delete','export']};
@@ -2194,7 +2204,8 @@ function cloudCode(){return 'CT1.'+btoa(unescape(encodeURIComponent(JSON.stringi
 function parseCode(c){try{c=String(c).trim();if(c.slice(0,4)!=='CT1.')throw 0;const o=JSON.parse(decodeURIComponent(escape(atob(c.slice(4)))));if(!o.u||!o.r||!o.k)throw 0;return o;}catch(e){throw new Error('رمز الربط غير صحيح');}}
 function cloudRenderUI(){
   const card=document.getElementById('cloudCard');if(!card)return;
-  card.style.display=(!SERVER&&currentUser&&currentUser.isAdmin)?'':'none';
+  card.style.display=(!SERVER&&currentUser)?'':'none';
+  card.querySelectorAll('[data-adm]').forEach(e=>{e.style.display=isGM()?'':'none';});
   document.getElementById('cl-off').style.display=CLOUD.on?'none':'block';document.getElementById('cl-on').style.display=CLOUD.on?'block':'none';
   if(CLOUD.on){document.getElementById('cl-room-lbl').textContent=CLOUD.room;document.getElementById('cl-code').value=cloudCode();}
 }
