@@ -1181,6 +1181,7 @@ function updateOnlineUsers(){
   if(!currentUser)return;
   let isOn;
   if(SERVER){isOn=u=>u.id===currentUser.id||(LINK_OK&&ONLINE.includes(u.id));}
+  else if(CLOUD.on){if(!CLOUD._first){CLOUD._first=1;cloudPresence();}isOn=u=>u.id===currentUser.id||(LINK_OK&&!!CLOUD.pres&&typeof CLOUD.pres['u'+u.id]==='number'&&CLOUD.presNow-CLOUD.pres['u'+u.id]<35000);}
   else{localStorage.setItem('on_'+currentUser.id,Date.now());const now=Date.now();isOn=u=>(now-parseInt(localStorage.getItem('on_'+u.id)||'0'))<120000||u.id===currentUser.id;}
   const users=getUsers().slice().sort((a,b)=>(isOn(b)-isOn(a))||String(a.name).localeCompare(String(b.name),'ar')),n=users.filter(isOn).length;
   const list=document.getElementById('onlineUsersList');
@@ -2103,6 +2104,19 @@ async function fb(path,method,body,q){
   return r.json();
 }
 // Firebase يحوّل المفاتيح الرقمية المتسلسلة (مثل أرقام المستخدمين 1،2،3) إلى مصفوفة فيها null — نعيدها كائناً
+// ── التواجد بين الأجهزة (وضع السحابة): كل جهاز يسجّل نبضة بوقت الخادم، والبقية يقرؤونها ──
+async function cloudPresence(){
+  if(!CLOUD.on||!currentUser)return;
+  try{
+    const mine=await fb('rooms/'+CLOUD.room+'/p/u'+currentUser.id,'PUT',{'.sv':'timestamp'});
+    const p=await fb('rooms/'+CLOUD.room+'/p')||{};
+    CLOUD.pres=p;CLOUD.presNow=Math.max(Number(mine)||0,...Object.values(p).filter(v=>typeof v==='number'));
+    updateOnlineUsers();
+  }catch(e){}
+}
+function cloudPresenceStop(){
+  try{if(CLOUD.on&&currentUser&&CLOUD.url)fetch(CLOUD.url.replace(/\/$/,'')+'/rooms/'+CLOUD.room+'/p/u'+currentUser.id+'.json',{method:'DELETE',keepalive:true});}catch(e){}
+}
 function fbMap(x){if(!x)return {};if(Array.isArray(x)){const o={};x.forEach((v,i)=>{if(v!==null&&v!==undefined)o[i]=v;});return o;}return x;}
 async function par(tasks,n){for(let i=0;i<tasks.length;i+=n)await Promise.all(tasks.slice(i,i+n).map(f=>f()));}
 const hsh=t=>{let h=0;for(const c of t)h=(h*31+c.charCodeAt(0))|0;return (h>>>0).toString(36);};
@@ -2131,6 +2145,8 @@ function cloudStatus(msg,err){const e=document.getElementById('cl-status');if(e)
 function cloudWhy(e){return e&&(e.status===401||e.status===403)?'مرفوض: راجع قواعد قاعدة البيانات (Rules)':(e&&e.status?'خطأ من الخادم HTTP '+e.status:(/Failed to fetch|NetworkError|Load failed|network/i.test(String(e&&e.message))?(navigator.onLine===false?'لا يوجد اتصال بالإنترنت':'تعذر الوصول لقاعدة البيانات (الإنترنت أو جدار ناري يحجب Firebase)'):'خطأ داخلي: '+((e&&e.message)||e)));}
 function cloudStart(){
   if(CLOUD.poll)return;
+  clearInterval(CLOUD.pp);CLOUD.pp=setInterval(cloudPresence,10000);setTimeout(cloudPresence,1500);
+  window.addEventListener('pagehide',cloudPresenceStop);
   CLOUD.poll=setInterval(async()=>{if(!CLOUD.on||CLOUD.busy)return;try{const m=await fb('rooms/'+CLOUD.room+'/meta');if(CLOUD.err||m!==CLOUD.meta)cloudSync();}catch(e){CLOUD.err=true;cloudStatus(cloudWhy(e)+' — ستُعاد المحاولة',true);}},5000);
   window.addEventListener('online',cloudSchedule);
   window.addEventListener('offline',()=>{CLOUD.err=true;cloudStatus('لا يوجد اتصال بالإنترنت — ستُعاد المحاولة',true);});
@@ -2232,7 +2248,7 @@ async function cloudLinkBtn(){try{const o=parseCode(document.getElementById('cl-
 async function loginLink(){const c=prompt('الصق رمز الربط (CT1....)');if(!c)return;try{const o=parseCode(c);await cloudEnable(o.u,o.r,o.k);document.getElementById('loginLinkRow').style.display='none';document.getElementById('modeNote').textContent='☁️ تم الربط — سجّل الدخول بحسابك';toast('تم ربط الجهاز');}catch(e){toast(e.message,'error');}}
 function cloudCopy(){const i=document.getElementById('cl-code');i.select();try{navigator.clipboard.writeText(i.value);}catch(e){document.execCommand('copy');}toast('تم نسخ الرمز');}
 function cloudDisableBtn(){askPassword('إيقاف المزامنة','سيتوقف هذا الجهاز عن المزامنة وتبقى بياناته عليه. أدخل كلمة المرور للتأكيد.',()=>{
-  clearInterval(CLOUD.poll);CLOUD.poll=null;Object.assign(CLOUD,{on:false,key:null,base:null});localStorage.removeItem('corresp_cloud');localStorage.removeItem('corresp_cbase');
+  cloudPresenceStop();clearInterval(CLOUD.pp);clearInterval(CLOUD.poll);CLOUD.poll=null;Object.assign(CLOUD,{on:false,key:null,base:null,pres:null});localStorage.removeItem('corresp_cloud');localStorage.removeItem('corresp_cbase');
   SYNC_LABEL='محلي (هذا الجهاز فقط)';document.getElementById('syncText').textContent=SYNC_LABEL;cloudRenderUI();toast('تم إيقاف المزامنة');});}
 
 // ═════════ تثبيت كتطبيق (PWA) ═════════
